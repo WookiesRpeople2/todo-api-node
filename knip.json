@@ -1,0 +1,10 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "project": [
+    "**/*.js"
+  ],
+  "eslint": true,
+  "jest": true,
+  "ignoreDependencies": [],
+  "ignoreExportsUsedInFile": false
+}
