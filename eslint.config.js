@@ -4,7 +4,7 @@ const globals = require("globals");
 module.exports = [
   js.configs.recommended,
   {
-    ignores: ["tests/**"],
+    ignores: ["test/**"],
   },
   {
     files: ["**/*.js"],
