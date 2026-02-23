@@ -9,7 +9,7 @@ let db;
 
 async function getDb() {
   if (db) return db;
-  console.log("initializing database connection")
+  console.log("initializing database connection");
   const SQL = await initSqlJs();
   if (fs.existsSync(DB_PATH)) {
     const buffer = fs.readFileSync(DB_PATH);
@@ -30,7 +30,7 @@ async function getDb() {
 
 function saveDb() {
   if (db) {
-    console.log("saving database to disk")
+    console.log("saving database to disk");
     const data = db.export();
     fs.writeFileSync(DB_PATH, Buffer.from(data));
   }
