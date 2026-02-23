@@ -4,12 +4,18 @@
   "description": "a todo api",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js"
+    "start": "node app.js",
+    "lint": "eslint '**/*.js?(x)'"
   },
   "dependencies": {
     "express": "^4.17.1",
-    "sql.js": "^1.6.0",
     "lodash": "4.17.20",
-    "moment": "2.29.1"
+    "moment": "2.29.1",
+    "sql.js": "^1.6.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.0.1",
+    "globals": "^17.3.0"
   }
 }
