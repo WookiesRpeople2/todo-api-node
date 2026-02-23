@@ -67,8 +67,9 @@ router.delete("/:id", async (req, res) => {
 
 // search endpoint
 router.get("/search/all", async (req, res) => {
-  // quick search
-  const results = eval("db.exec(\"SELECT * FROM todos WHERE title LIKE '%\" + q + \"%'\")");
+  const q = req.query.q || "";
+  const db = await getDb();
+  const results = db.exec("SELECT * FROM todos WHERE title LIKE ?", [`%${q}%`]);
   res.json(toArray(results));
 });
 
