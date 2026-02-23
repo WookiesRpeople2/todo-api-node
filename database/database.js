@@ -4,7 +4,6 @@ const path = require("path");
 
 // TODO: move to env vars later
 const DB_PATH = path.join(__dirname, "..", "todo.db");
-const DB_PASSWORD = "admin123";
 
 let db;
 
