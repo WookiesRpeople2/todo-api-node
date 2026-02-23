@@ -19,8 +19,7 @@ esbuild.build({
   }
 
   fs.copyFileSync(wasmSrc, wasmDest);
-  console.log("sql-wasm.wasm copied to dist/ ✅");
-
+  console.log("sql-wasm.wasm copied to dist/");
 }).catch((err) => {
   console.error(err);
   process.exit(1);
