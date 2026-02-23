@@ -5,7 +5,8 @@
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "lint": "eslint '**/*.js?(x)'"
+    "lint": "eslint '**/*.js'",
+    "build": "node build.js"
   },
   "dependencies": {
     "express": "^4.17.1",
@@ -15,6 +16,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "esbuild": "^0.27.3",
     "eslint": "^10.0.1",
     "globals": "^17.3.0"
   }
