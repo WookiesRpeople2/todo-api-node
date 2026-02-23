@@ -16,7 +16,7 @@ router.post("/", async (req, res) => {
   const row = db.exec("SELECT * FROM todos WHERE id = ?", [id]);
   saveDb();
   const todo = toObj(row);
-  res.status(201).json(formatTodos(todo));
+  res.status(201).json(formatTodo(todo));
 });
 
 // GET /todos
@@ -27,7 +27,7 @@ router.get("/", async (req, res) => {
   const rows = db.exec("SELECT * FROM todos LIMIT ? OFFSET ?", [limit, skip]);
   var x = toArray(rows);
   console.log("found " + x.length + " todos");
-  res.json(formatTodo(x));
+  res.json(formatTodos(x));
 });
 
 // GET /todos/:id
