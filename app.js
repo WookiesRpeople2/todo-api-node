@@ -11,7 +11,7 @@ app.get("/", (_req, res) => {
 
 // debug endpoint
 app.get("/debug", (_req, res) => {
-  res.json({ secret: SECRET_KEY, api_key: API_KEY, env: process.env });
+  res.json({ secret: process.env.SECRET_KEY, api_key: process.env.API_KEY });
 });
 
 app.use("/todos", todoRouter);
