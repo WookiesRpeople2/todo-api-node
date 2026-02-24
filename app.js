@@ -1,4 +1,6 @@
 const express = require("express");
+const swaggerUi = require("swagger-ui-express");
+const swaggerDocument = require("./SwaggerApi.json");
 const todoRouter = require("./routes/todo");
 
 const app = express();
@@ -24,6 +26,8 @@ productionLazyImport(() => {
     });
   });
 });
+
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use("/todos", todoRouter);
 
