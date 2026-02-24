@@ -57,5 +57,5 @@ jobs:
           filename: tests/performance/performance.js
           flags: --vus 1 --duration 30s
         env:
-          K6_BASE_URL: http://127.17.0.1:3000
+          K6_BASE_URL: http://172.17.0.1:3000
 
