@@ -22,7 +22,7 @@ describe('Todo Routes', () => {
     test('should create a todo with description', async () => {
       const response = await request(app)
         .post('/todos')
-        .send({ 
+        .send({
           title: 'Todo with Description',
           description: 'This is a description'
         })
@@ -34,7 +34,7 @@ describe('Todo Routes', () => {
     test('should accept custom status', async () => {
       const response = await request(app)
         .post('/todos')
-        .send({ 
+        .send({
           title: 'Todo with Status',
           status: 'completed'
         })
@@ -189,5 +189,94 @@ describe('Todo Routes', () => {
         .get(`/todos/${todoId}`)
         .expect(404);
     });
+  });
+});
+
+describe('GET /search/all', () => {
+  beforeEach(async () => {
+    const db = await getDb();
+    db.run("DELETE FROM todos");
+    saveDb();
+
+    await request(app).post('/todos').send({ title: 'Buy groceries', description: 'Milk and eggs' });
+    await request(app).post('/todos').send({ title: 'Buy flowers', description: 'For the garden' });
+    await request(app).post('/todos').send({ title: 'Walk the dog', description: 'Morning walk' });
+  });
+
+  test('should return all todos when no query is provided', async () => {
+    const response = await request(app)
+      .get('/todos/search/all')
+      .expect(200);
+
+    expect(Array.isArray(response.body)).toBeTruthy();
+    expect(response.body.length).toBe(3);
+  });
+
+  test('should return all todos when q is empty string', async () => {
+    const response = await request(app)
+      .get('/todos/search/all?q=')
+      .expect(200);
+
+    expect(Array.isArray(response.body)).toBeTruthy();
+    expect(response.body.length).toBe(3);
+  });
+
+  test('should return matching todos for a query', async () => {
+    const response = await request(app)
+      .get('/todos/search/all?q=Buy')
+      .expect(200);
+
+    expect(response.body.length).toBe(2);
+    expect(response.body.every(todo => todo.title.includes('Buy'))).toBeTruthy();
+  });
+
+  test('should be case-insensitive', async () => {
+    const response = await request(app)
+      .get('/todos/search/all?q=buy')
+      .expect(200);
+
+    expect(response.body.length).toBe(2);
+  });
+
+  test('should return empty array when no todos match', async () => {
+    const response = await request(app)
+      .get('/todos/search/all?q=nonexistent')
+      .expect(200);
+
+    expect(Array.isArray(response.body)).toBeTruthy();
+    expect(response.body.length).toBe(0);
+  });
+
+  test('should match partial title', async () => {
+    const response = await request(app)
+      .get('/todos/search/all?q=dog')
+      .expect(200);
+
+    expect(response.body.length).toBe(1);
+    expect(response.body[0].title).toBe('Walk the dog');
+  });
+
+  test('should return correct todo structure in results', async () => {
+    const response = await request(app)
+      .get('/todos/search/all?q=groceries')
+      .expect(200);
+
+    expect(response.body[0]).toHaveProperty('id');
+    expect(response.body[0]).toHaveProperty('title');
+    expect(response.body[0]).toHaveProperty('description');
+    expect(response.body[0]).toHaveProperty('status');
+  });
+
+  test('should return empty array when database is empty', async () => {
+    const db = await getDb();
+    db.run("DELETE FROM todos");
+    saveDb();
+
+    const response = await request(app)
+      .get('/todos/search/all?q=Buy')
+      .expect(200);
+
+    expect(Array.isArray(response.body)).toBeTruthy();
+    expect(response.body.length).toBe(0);
   });
 });
