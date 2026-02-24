@@ -34,7 +34,7 @@ jobs:
   k6:
     name: k6 Performance Test
     runs-on: ubuntu-latest
-    needs: [your-existing-test-job]
+    needs: [coverage]
     steps:
       - uses: actions/checkout@v4
 
