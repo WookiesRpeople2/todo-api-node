@@ -51,3 +51,19 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  deploy-staging:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Deploy to staging
+        run: echo "Deploying to staging"
+
+  deploy-production:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Deploy to production
+        run: echo "Deploying to production"
