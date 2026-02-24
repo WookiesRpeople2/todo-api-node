@@ -8,6 +8,9 @@ esbuild.build({
   platform: "node",
   outfile: "dist/app.js",
   external: ["express"],
+  define: {
+    "process.env.NODE_ENV": '"production"'
+  }
 }).then(() => {
   console.log("JS bundled successfully.");
 
