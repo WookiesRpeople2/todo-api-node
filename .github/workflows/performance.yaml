@@ -19,8 +19,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  smoke-test:
-    name: Smoke Test
+  k6-smoke:
+    name: k6 Smoke Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -42,7 +42,7 @@ jobs:
         with:
           base-url-override: ${{ github.event.inputs.base_url }}
 
-      - name: Run smoke test
+      - name: Run k6 smoke test
         run: |
           mkdir -p k6-results
           k6 run \
@@ -62,10 +62,10 @@ jobs:
           path: k6-results/
           retention-days: 30
 
-  load-test:
-    name: Load Test
+  k6-load:
+    name: k6 Load Test
     runs-on: ubuntu-latest
-    needs: smoke-test
+    needs: k6-smoke
     if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     steps:
       - uses: actions/checkout@v4
@@ -87,7 +87,7 @@ jobs:
         with:
           base-url-override: ${{ github.event.inputs.base_url }}
 
-      - name: Run load test
+      - name: Run k6 load test
         run: |
           mkdir -p k6-results
           k6 run \
@@ -103,7 +103,7 @@ jobs:
         if: always()
         run: |
           {
-            echo "## Load Test Results"
+            echo "## k6 Load Test Results"
             echo "**Target:** ${{ steps.app.outputs.base-url }}"
             echo ""
             echo "| Metric | Threshold |"
@@ -124,10 +124,10 @@ jobs:
           path: k6-results/
           retention-days: 30
 
-  stress-test:
-    name: Stress Test
+  k6-stress:
+    name: k6 Stress Test
     runs-on: ubuntu-latest
-    needs: load-test
+    needs: k6-load
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
@@ -149,7 +149,7 @@ jobs:
         with:
           base-url-override: ${{ github.event.inputs.base_url }}
 
-      - name: Run stress test
+      - name: Run k6 stress test
         continue-on-error: true
         run: |
           mkdir -p k6-results
