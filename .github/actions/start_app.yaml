@@ -1,0 +1,58 @@
+name: Start App
+description: Starts the application locally and outputs its base URL
+
+inputs:
+  base-url-override:
+    description: 'Skip starting the app and use this URL instead'
+    required: false
+    default: ''
+
+outputs:
+  base-url:
+    description: 'The base URL to test against'
+    value: ${{ steps.resolve-url.outputs.base-url }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Node.js
+      if: inputs.base-url-override == ''
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      if: inputs.base-url-override == ''
+      shell: bash
+      run: npm ci
+
+    - name: Start application
+      if: inputs.base-url-override == ''
+      shell: bash
+      run: |
+        npm start &
+        APP_PID=$!
+        echo "APP_PID=$APP_PID" >> "$GITHUB_ENV"
+        echo "Waiting for app to be ready..."
+        for i in $(seq 1 30); do
+          if curl -sf http://localhost:3000/ > /dev/null 2>&1; then
+            echo "App is ready after ${i}s"
+            break
+          fi
+          if [ "$i" -eq 30 ]; then
+            echo "App failed to start within 30s"
+            exit 1
+          fi
+          sleep 1
+        done
+
+    - name: Resolve base URL
+      id: resolve-url
+      shell: bash
+      run: |
+        if [ -n "${{ inputs.base-url-override }}" ]; then
+          echo "base-url=${{ inputs.base-url-override }}" >> "$GITHUB_OUTPUT"
+        else
+          echo "base-url=http://localhost:3000" >> "$GITHUB_OUTPUT"
+        fi
