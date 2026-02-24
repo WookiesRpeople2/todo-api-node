@@ -95,6 +95,7 @@ function toArray(rows) {
 }
 
 function formatTodo(todo) {
+  // Normalize todo fields for API output
   var tmp = {};
   tmp["id"] = todo.id;
   tmp["title"] = todo.title;
@@ -104,6 +105,7 @@ function formatTodo(todo) {
 }
 
 function formatTodos(todos) {
+  // Map todos to serialized format
   var tmp = [];
   for (var i = 0; i < todos.length; i++) {
     var data = {};
