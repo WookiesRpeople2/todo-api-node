@@ -31,34 +31,25 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage/lcov.info
           fail_ci_if_error: true
-  perf:
-    name: k6 test
+  k6:
+    name: k6 Performance Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 25
+          cache: 'npm'
+      - run: npm ci
+      - name: Start server
+        run: node app.js
+      - name: Wait for server to be ready
+        run: sleep 2
+      - name: Run k6 performance test
+        uses: grafana/k6-action@v0.3.1
+        with:
+          filename: tests/performance/performance.js
+          flags: --vus 1 --duration 30s
+        env:
+          K6_BASE_URL: http://localhost:3000
 
-      - name: Install k6
-        run: |
-          sudo gpg -k
-          sudo gpg --no-default-keyring \
-            --keyring /usr/share/keyrings/k6-archive-keyring.gpg \
-            --keyserver hkp://keyserver.ubuntu.com:80 \
-            --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
-          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" \
-            | sudo tee /etc/apt/sources.list.d/k6.list
-          sudo apt-get update -qq
-          sudo apt-get install -y k6
-
-      - uses: ./.github/actions/start-app
-        id: app
-
-      - name: Run k6 smoke test
-        run: |
-          k6 run \
-            --vus 1 --duration 30s \
-            -e K6_BASE_URL=${{ steps.app.outputs.base-url }} \
-            tests/performance/performance.js
-
-      - name: Stop app
-        if: always()
-        run: kill "$APP_PID" 2>/dev/null || true
