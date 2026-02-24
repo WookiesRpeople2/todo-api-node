@@ -1,16 +1,19 @@
-name: Build and Push Docker Image
+name: Build, Push, and Deploy Docker Image
+
 on:
   push:
-    branches: [ main, intergration, development ]
+    branches: [ main, integration, development ]
     tags:
       - "v*.*.*"
   workflow_run:
     workflows: ["Lint", "Test"]
     types: [completed]
-    branches: [ main, intergration, development ]
+    branches: [ main, integration, development ]
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -40,7 +43,7 @@ jobs:
             type=ref,event=branch
             type=ref,event=tag
             type=sha
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest,enable={{ github.ref == 'refs/heads/main' }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -53,17 +56,23 @@ jobs:
           cache-to: type=gha,mode=max
 
   deploy-staging:
-    needs: build-and-push
     runs-on: ubuntu-latest
-    environment: staging
+    needs: docker
+    if: github.ref == 'refs/heads/develop'
+    environment:
+      name: staging
     steps:
       - name: Deploy to staging
-        run: echo "Deploying to staging"
+        run: |
+          echo "Deploying to staging via render.com"
+          curl -X POST "${{ secrets.STAGING_DEPLOY_HOOK }}"
 
-  deploy-production:
-    needs: deploy-staging
+  deploy:
     runs-on: ubuntu-latest
-    environment: production
+    needs: docker
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: production
     steps:
       - name: Deploy to production
-        run: echo "Deploying to production"
+        run: curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"
