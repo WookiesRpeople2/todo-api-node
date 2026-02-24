@@ -32,10 +32,6 @@ npm test
 - `SECRET_KEY`: used only by `/debug`
 - `API_KEY`: used only by `/debug`
 
-## API documentation
-
-Base URL: `http://localhost:3000`
-
 ### Health
 
 #### `GET /`
@@ -48,61 +44,9 @@ Response:
 }
 ```
 
-### Debug
-
-#### `GET /debug`
-
-Returns environment secrets. Do not expose in production.
-
-Response:
-
-```json
-{
-	"secret": "...",
-	"api_key": "..."
-}
-```
 
 ### Todos
 
-#### `POST /todos`
-
-Create a todo.
-
-Body:
-
-```json
-{
-	"title": "Buy milk",
-	"description": "2 bottles",
-	"status": "pending"
-}
-```
-
-Rules:
-
-- `title` is required
-- `description` is optional (default `null`)
-- `status` is optional (default `pending`)
-
-Success response (201):
-
-```json
-{
-	"id": 1,
-	"title": "Buy milk",
-	"description": "2 bottles",
-	"status": "pending"
-}
-```
-
-Error response (422):
-
-```json
-{
-	"detail": "title is required"
-}
-```
 
 #### `GET /todos`
 
