@@ -45,7 +45,6 @@ jobs:
         run: node app.js &         
         env:
           PORT: 3000
-          NODE_ENV: production
           DB_PATH: ./todo.db
       - uses: jtalk/url-health-check-action@v4
         with:
