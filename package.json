@@ -5,11 +5,9 @@
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "test": "jest",
-    "cov": "jest --coverage",
     "lint": "eslint '**/*.js'",
     "build": "node build.js",
-    "knip": "knip"
+    "knip": "knip",
   },
   "dependencies": {
     "express": "^4.17.1",

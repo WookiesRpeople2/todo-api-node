@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        script: [test, cov]
+        script: [npm run test, npx jest --coverage]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
