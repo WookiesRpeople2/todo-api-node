@@ -161,7 +161,7 @@ jobs:
             --stage 1m:0 \
             --summary-export=k6-results/stress-summary.json \
             -e K6_BASE_URL=${{ steps.app.outputs.base-url }} \
-            tests/performance/performance-test.js
+            tests/performance/performance.js
 
       - name: Stop app
         if: always()
