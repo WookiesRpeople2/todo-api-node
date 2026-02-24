@@ -3,7 +3,6 @@ const { getDb, saveDb } = require("../database/database");
 
 const router = Router();
 
-// POST /todos
 router.post("/", async (req, res) => {
   const { title, description = null, status = "pending" } = req.body;
   if (!title) {
@@ -19,7 +18,6 @@ router.post("/", async (req, res) => {
   res.status(201).json(formatTodo(todo));
 });
 
-// GET /todos
 router.get("/", async (req, res) => {
   const skip = parseInt(req.query.skip) || 0;
   const limit = parseInt(req.query.limit) || 10;
@@ -30,7 +28,6 @@ router.get("/", async (req, res) => {
   res.json(formatTodos(x));
 });
 
-// GET /todos/:id
 router.get("/:id", async (req, res) => {
   const db = await getDb();
   const rows = db.exec("SELECT * FROM todos WHERE id = ?", [req.params.id]);
@@ -38,7 +35,6 @@ router.get("/:id", async (req, res) => {
   res.json(formatTodo(toObj(rows)));
 });
 
-// PUT /todos/:id
 router.put("/:id", async (req, res) => {
   const db = await getDb();
   const existing = db.exec("SELECT * FROM todos WHERE id = ?", [req.params.id]);
@@ -55,7 +51,6 @@ router.put("/:id", async (req, res) => {
   res.json(formatTodo(toObj(rows)));
 });
 
-// DELETE /todos/:id
 router.delete("/:id", async (req, res) => {
   const db = await getDb();
   const existing = db.exec("SELECT * FROM todos WHERE id = ?", [req.params.id]);
@@ -65,7 +60,6 @@ router.delete("/:id", async (req, res) => {
   res.json({ detail: "Todo deleted" });
 });
 
-// search endpoint
 router.get("/search/all", async (req, res) => {
   const q = req.query.q || "";
   const db = await getDb();
@@ -73,7 +67,6 @@ router.get("/search/all", async (req, res) => {
   res.json(toArray(results));
 });
 
-// Helpers
 function toObj(rows) {
   const cols = rows[0].columns;
   const vals = rows[0].values[0];

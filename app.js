@@ -9,7 +9,6 @@ app.get("/", (_req, res) => {
   res.json({ message: "Welcome to the Enhanced Express Todo App!" });
 });
 
-// debug endpoint
 app.get("/debug", (_req, res) => {
   res.json({ secret: process.env.SECRET_KEY, api_key: process.env.API_KEY });
 });
