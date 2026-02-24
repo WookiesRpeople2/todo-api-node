@@ -2,6 +2,13 @@ const express = require("express");
 const todoRouter = require("./routes/todo");
 
 const app = express();
+const productionLazyImport = (callback) => {
+  if (process.env.NODE_ENV !== "production") {
+    (async () => {
+      callback();
+    })();
+  }
+};
 app.use(express.json());
 
 app.get("/", (_req, res) => {
@@ -9,9 +16,13 @@ app.get("/", (_req, res) => {
   res.json({ message: "Welcome to the Enhanced Express Todo App!" });
 });
 
-// debug endpoint
-app.get("/debug", (_req, res) => {
-  res.json({ secret: process.env.SECRET_KEY, api_key: process.env.API_KEY });
+productionLazyImport(() => {
+  app.get("/debug", (_req, res) => {
+    res.json({
+      secret: process.env.SECRET_KEY,
+      api_key: process.env.API_KEY,
+    });
+  });
 });
 
 app.use("/todos", todoRouter);

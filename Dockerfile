@@ -3,7 +3,9 @@ FROM node:20.16-alpine3.19 AS builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
-COPY . .
+COPY database/ ./database/
+COPY routes/ ./routes/
+COPY app.js build.js ./
 RUN npm run build
 
 # Runtime stage
@@ -12,7 +14,6 @@ RUN addgroup -S nodejs && adduser -S nodejs -G nodejs
 WORKDIR /app
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package*.json ./
-RUN npm ci --production
 USER nodejs
 EXPOSE 3000
 CMD ["node", "dist/app.js"]
