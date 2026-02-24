@@ -5,6 +5,7 @@
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
+    "test": "jest",
     "lint": "eslint '**/*.js'",
     "build": "node build.js",
     "knip": "knip"
