@@ -19,8 +19,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  k6-smoke:
-    name: k6 Smoke Test
+  benchmark:
+    name: k6 Benchmark Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -62,7 +62,7 @@ jobs:
           path: k6-results/
           retention-days: 30
 
-  k6-load:
+  load:
     name: k6 Load Test
     runs-on: ubuntu-latest
     needs: k6-smoke
@@ -124,7 +124,7 @@ jobs:
           path: k6-results/
           retention-days: 30
 
-  k6-stress:
+  stress:
     name: k6 Stress Test
     runs-on: ubuntu-latest
     needs: k6-load
