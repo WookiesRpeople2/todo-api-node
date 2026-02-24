@@ -3,7 +3,9 @@ FROM node:20.16-alpine3.19 AS builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
-COPY database/ routes/ app.js build.js ./
+COPY database/ ./database/
+COPY routes/ ./routes/
+COPY app.js build.js ./
 RUN npm run build
 
 # Runtime stage
