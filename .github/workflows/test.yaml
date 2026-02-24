@@ -1,7 +1,5 @@
 name: Test
 on:
-  push:
-    branches: [ main ]
   pull_request:
     branches: [ main, intergration, development ]
 jobs:
@@ -31,3 +29,31 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage/lcov.info
           fail_ci_if_error: true
+  k6:
+    name: k6 Performance Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 25
+          cache: 'npm'
+      - run: npm ci
+      - name: Start server
+        run: node app.js &         
+        env:
+          PORT: 3000
+          DB_PATH: ./todo.db
+      - uses: jtalk/url-health-check-action@v4
+        with:
+          url: http://localhost:3000
+          max-attempts: 5
+          retry-delay: 2s
+      - name: Run k6 performance test
+        uses: grafana/k6-action@v0.3.1
+        with:
+          filename: tests/performance/performance.js
+          flags: --vus 1 --duration 30s
+        env:
+          K6_BASE_URL: http://172.17.0.1:3000
+
