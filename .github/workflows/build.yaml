@@ -8,7 +8,7 @@ on:
   workflow_run:
     workflows: ["Lint", "Test"]
     types: [completed]
-    branches: [ main, integration, development ]
+    branches: [ main, intergration, development ]
 
 env:
   REGISTRY: ghcr.io
