@@ -32,7 +32,7 @@ jobs:
           files: ./coverage/lcov.info
           fail_ci_if_error: true
   k6:
-    name: k6 Performance Test
+    name: k6 test
     runs-on: ubuntu-latest
     needs: [coverage]
     steps:
