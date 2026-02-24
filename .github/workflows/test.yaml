@@ -21,4 +21,4 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Run ${{ matrix.script }}
-        run: npm run ${{ matrix.script }}
+        run: ${{ matrix.script }}
