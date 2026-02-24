@@ -65,7 +65,7 @@ jobs:
   load:
     name: k6 Load Test
     runs-on: ubuntu-latest
-    needs: k6-smoke
+    needs: benchmark
     if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     steps:
       - uses: actions/checkout@v4
@@ -127,7 +127,7 @@ jobs:
   stress:
     name: k6 Stress Test
     runs-on: ubuntu-latest
-    needs: k6-load
+    needs: load
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
