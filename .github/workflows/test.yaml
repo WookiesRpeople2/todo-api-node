@@ -31,10 +31,9 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage/lcov.info
           fail_ci_if_error: true
-  k6:
+  perf:
     name: k6 test
     runs-on: ubuntu-latest
-    needs: [coverage]
     steps:
       - uses: actions/checkout@v4
 
