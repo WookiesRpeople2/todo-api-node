@@ -12,6 +12,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   NODE_VERSION: 25
+  SHARD_COUNT: 4
 
 permissions:
   actions: read
@@ -34,13 +35,22 @@ jobs:
 
       - name: Run linter
         run: npx eslint '**/*.js'
-  
+
+  generate-shards:
+      runs-on: ubuntu-latest
+      outputs:
+        shards: ${{ steps.set.outputs.shards }}
+      steps:
+        - id: set
+          run: |
+            echo "shards=$(node -e "console.log(JSON.stringify({shard:[...Array(${{ env.SHARD_COUNT }})].map((_,i)=>i+1)}))")" >> $GITHUB_OUTPUT
+
   test:
     runs-on: ubuntu-latest
+    needs: generate-shards
     strategy:
       fail-fast: false
-      matrix:
-        shard: [1, 2, 3, 4]
+      matrix: ${{ fromJson(needs.generate-shards.outputs.shards) }}
     steps:
       - uses: actions/checkout@v4
 
@@ -52,7 +62,12 @@ jobs:
       - run: npm ci
       
       - name: Run tests (shard ${{ matrix.shard }}/4)
-        run: npm test -- --coverage --coverageReporters=lcov --shard=${{ matrix.shard }}/4
+        run: |
+          npm test -- \
+            --coverage \
+            --coverageReporters=lcov \
+            --coverageThreshold='{}' \
+            --shard=${{ matrix.shard }}/${{ env.SHARD_COUNT }}
 
   coverage-upload:
     name: Upload Coverage
@@ -65,6 +80,9 @@ jobs:
           pattern: coverage-shard-*
           merge-multiple: true
           path: coverage
+
+      - name: Enforce Jest coverage thresholds
+        run: node jest.config.js
 
       - name: Upload merged coverage to Codecov
         uses: codecov/codecov-action@v4
