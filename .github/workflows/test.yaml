@@ -58,7 +58,7 @@ jobs:
           k6 run \
             --vus 1 --duration 30s \
             -e K6_BASE_URL=${{ steps.app.outputs.base-url }} \
-            tests/performance/performance-test.js
+            tests/performance/performance.js
 
       - name: Stop app
         if: always()
