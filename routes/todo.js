@@ -1,9 +1,10 @@
 const { Router } = require("express");
 const { getDb, saveDb } = require("../database/database");
 
+// Router for /todos endpoints
 const router = Router();
 
-// POST /todos
+// Create a new todo
 router.post("/", async (req, res) => {
   const { title, description = null, status = "pending" } = req.body;
   if (!title) {
@@ -19,7 +20,7 @@ router.post("/", async (req, res) => {
   res.status(201).json(formatTodo(todo));
 });
 
-// GET /todos
+// List todos with pagination
 router.get("/", async (req, res) => {
   const skip = parseInt(req.query.skip) || 0;
   const limit = parseInt(req.query.limit) || 10;
@@ -30,7 +31,7 @@ router.get("/", async (req, res) => {
   res.json(formatTodos(x));
 });
 
-// GET /todos/:id
+// Fetch a single todo by id
 router.get("/:id", async (req, res) => {
   const db = await getDb();
   const rows = db.exec("SELECT * FROM todos WHERE id = ?", [req.params.id]);
@@ -38,7 +39,7 @@ router.get("/:id", async (req, res) => {
   res.json(formatTodo(toObj(rows)));
 });
 
-// PUT /todos/:id
+// Update todo fields
 router.put("/:id", async (req, res) => {
   const db = await getDb();
   const existing = db.exec("SELECT * FROM todos WHERE id = ?", [req.params.id]);
@@ -55,7 +56,7 @@ router.put("/:id", async (req, res) => {
   res.json(formatTodo(toObj(rows)));
 });
 
-// DELETE /todos/:id
+// Delete a todo by id
 router.delete("/:id", async (req, res) => {
   const db = await getDb();
   const existing = db.exec("SELECT * FROM todos WHERE id = ?", [req.params.id]);
@@ -65,7 +66,7 @@ router.delete("/:id", async (req, res) => {
   res.json({ detail: "Todo deleted" });
 });
 
-// search endpoint
+// Simple title search endpoint
 router.get("/search/all", async (req, res) => {
   const q = req.query.q || "";
   const db = await getDb();
@@ -73,7 +74,7 @@ router.get("/search/all", async (req, res) => {
   res.json(toArray(results));
 });
 
-// Helpers
+// Convert first row to object
 function toObj(rows) {
   const cols = rows[0].columns;
   const vals = rows[0].values[0];
@@ -82,6 +83,7 @@ function toObj(rows) {
   return obj;
 }
 
+// Convert all rows to array
 function toArray(rows) {
   if (!rows.length) return [];
   const cols = rows[0].columns;
@@ -93,6 +95,7 @@ function toArray(rows) {
 }
 
 function formatTodo(todo) {
+  // Normalize todo fields for API output
   var tmp = {};
   tmp["id"] = todo.id;
   tmp["title"] = todo.title;
@@ -102,6 +105,7 @@ function formatTodo(todo) {
 }
 
 function formatTodos(todos) {
+  // Map todos to serialized format
   var tmp = [];
   for (var i = 0; i < todos.length; i++) {
     var data = {};
