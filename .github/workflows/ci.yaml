@@ -34,9 +34,13 @@ jobs:
 
       - name: Run linter
         run: npx eslint '**/*.js'
-
+  
   test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v4
 
@@ -46,9 +50,23 @@ jobs:
           cache: npm
 
       - run: npm ci
-      - run: npm test -- --coverage --coverageReporters=lcov
+      
+      - name: Run tests (shard ${{ matrix.shard }}/4)
+        run: npm test -- --coverage --coverageReporters=lcov --shard=${{ matrix.shard }}/4
 
-      - name: Upload coverage to Codecov
+  coverage-upload:
+    name: Upload Coverage
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: coverage-shard-*
+          merge-multiple: true
+          path: coverage
+
+      - name: Upload merged coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -57,7 +75,6 @@ jobs:
 
   k6:
     name: k6 Performance Test
-    if: github.event_name == 'pull_request' || github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -91,11 +108,7 @@ jobs:
 
   build-and-push:
     name: Build and Push Docker Image
-    needs: [lint, test]
-    if: |
-      always() &&
-      needs.lint.result == 'success' &&
-      needs.test.result == 'success'
+    needs: [lint, coverage-upload, k6]
     runs-on: ubuntu-latest
     permissions:
       contents: read
