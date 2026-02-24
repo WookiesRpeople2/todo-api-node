@@ -43,8 +43,11 @@ jobs:
       - run: npm ci
       - name: Start server
         run: node app.js
-      - name: Wait for server to be ready
-        run: sleep 2
+      - uses: jtalk/url-health-check-action@v4
+        with:
+          url: http://localhost:3000/health
+          max-attempts: 5
+          retry-delay: 2s
       - name: Run k6 performance test
         uses: grafana/k6-action@v0.3.1
         with:
