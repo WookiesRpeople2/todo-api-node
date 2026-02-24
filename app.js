@@ -1,6 +1,6 @@
 const express = require("express");
 const swaggerUi = require("swagger-ui-express");
-const swaggerDocument = require("./SwaggerApi.json");
+const swaggerDocument = require("./swagger.json");
 const todoRouter = require("./routes/todo");
 
 const app = express();

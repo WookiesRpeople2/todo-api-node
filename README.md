@@ -1,5 +1,9 @@
 # Todo API
 
+[![codecov](https://codecov.io/gh/user/todo-api-node/branch/main/graph/badge.svg)](https://codecov.io/gh/user/todo-api-node)
+[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D18-green)](https://nodejs.org/)
+
 Simple Express API for managing todos with a file-backed SQLite database (sql.js).
 
 ## Prerequisites
