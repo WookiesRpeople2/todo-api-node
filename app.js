@@ -27,7 +27,7 @@ productionLazyImport(() => {
   });
 });
 
-app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.get("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use("/todos", todoRouter);
 
