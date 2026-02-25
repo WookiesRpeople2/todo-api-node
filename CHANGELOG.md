@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/WookiesRpeople2/todo-api-node/compare/v1.5.0...v1.6.0) (2026-02-25)
+
+
+### Features
+
+* autmatic mergining working ([a879caa](https://github.com/WookiesRpeople2/todo-api-node/commit/a879caa7b5e03c7a5bf6301acf4c7aae701ee6ff))
+
 ## [1.5.0](https://github.com/WookiesRpeople2/todo-api-node/compare/v1.4.0...v1.5.0) (2026-02-25)
 
 
