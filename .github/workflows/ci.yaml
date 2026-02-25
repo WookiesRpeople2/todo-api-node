@@ -117,7 +117,7 @@ jobs:
             | xargs lcov --output-file coverage/lcov.info
 
       - name: Merge coverage-final.json files
-        run: node scripts/merge-coverage.mjs
+        run: npm run coverage:merge
 
       - name: Enforce Jest coverage thresholds
         run: npm run coverage:verify
