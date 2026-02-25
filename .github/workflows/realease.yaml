@@ -7,8 +7,6 @@ on:
 permissions:
   contents: write
   pull-requests: write
-  issues: write
-
 
 jobs:
   release-please:
@@ -18,7 +16,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: node
-
+  
   cascade-merge:
     if: startsWith(github.event.head_commit.message, 'chore(main):\ release')
     runs-on: ubuntu-latest
