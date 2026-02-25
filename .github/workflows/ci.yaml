@@ -295,18 +295,6 @@ jobs:
           cache-to: type=gha,mode=max
 
   deploy-development:
-    name: Deploy to development
-    needs: build-and-push
-    if: github.ref == 'refs/heads/development'
-    runs-on: ubuntu-latest
-    environment:
-      name: development
-    steps:
-      - name: Deploy to development
-        run: echo "Deploying to development"
-
-
-  deploy-development:
     name: Deploy to Staging
     needs: build-and-push
     if: github.ref == 'refs/heads/development'
