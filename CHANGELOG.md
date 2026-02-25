@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/WookiesRpeople2/todo-api-node/compare/v1.4.0...v1.5.0) (2026-02-25)
+
+
+### Features
+
+* look back int pr names ([c6ed1d8](https://github.com/WookiesRpeople2/todo-api-node/commit/c6ed1d8e138842532aacad48feb4e1540725b603))
+
 ## [1.4.0](https://github.com/WookiesRpeople2/todo-api-node/compare/v1.3.0...v1.4.0) (2026-02-25)
 
 
