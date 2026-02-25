@@ -51,7 +51,7 @@ jobs:
       - run: npm ci 
       - id: set
         run: |
-          FILE_COUNT=$(npx jest -- --listTests --colors=false --silent | grep '\.test\.js$' | wc -l)
+          FILE_COUNT=$(npx jest --listTests --colors=false --silent | grep '\.test\.js$' | wc -l)
           MAX_SHARDS=${{ env.MAX_SHARDS }}
           SHARD_COUNT=$(( FILE_COUNT < MAX_SHARDS ? FILE_COUNT : MAX_SHARDS ))
 
