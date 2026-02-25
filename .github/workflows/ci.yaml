@@ -43,7 +43,7 @@ jobs:
       count: ${{ steps.set.outputs.count }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4        # ← ADD THIS
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -52,9 +52,11 @@ jobs:
       - id: set
         run: |
           FILE_COUNT=$(npx jest -- --listTests --colors=false --silent | grep '\.test\.js$' | wc -l)
-
+          MAX_SHARDS=${{ env.MAX_SHARDS }}
           SHARD_COUNT=$(( FILE_COUNT < MAX_SHARDS ? FILE_COUNT : MAX_SHARDS ))
-          SHARD_COUNT=$(( SHARD_COUNT ))
+
+          echo "Number of test files found: $FILE_COUNT"
+          echo "Number of shards: $SHARD_COUNT"
 
           echo "count=$SHARD_COUNT" >> $GITHUB_OUTPUT
           echo "shards=$(node -e "console.log(JSON.stringify({shard:[...Array($SHARD_COUNT)].map((_,i)=>i+1)}))")" >> $GITHUB_OUTPUT
