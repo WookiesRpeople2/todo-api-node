@@ -12,7 +12,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   NODE_VERSION: 25
-  SHARD_COUNT: 4
+  MAX_SHARDS: 4
 
 permissions:
   actions: read
@@ -36,15 +36,22 @@ jobs:
       - name: Run linter
         run: npx eslint '**/*.js'
 
-  generate-shards:
-      runs-on: ubuntu-latest
-      outputs:
-        shards: ${{ steps.set.outputs.shards }}
-      steps:
-        - id: set
-          run: |
-            echo "shards=$(node -e "console.log(JSON.stringify({shard:[...Array(${{ env.SHARD_COUNT }})].map((_,i)=>i+1)}))")" >> $GITHUB_OUTPUT
+generate-shards:
+  runs-on: ubuntu-latest
+  outputs:
+    shards: ${{ steps.set.outputs.shards }}
+    count: ${{ steps.set.outputs.count }}
+  steps:
+    - uses: actions/checkout@v4
+      run: |
+        FILE_COUNT=$(npm test -- --listTests 2>/dev/null | wc -l | tr -d ' ')
 
+        SHARD_COUNT=$(( FILE_COUNT < MAX_SHARDS ? FILE_COUNT : MAX_SHARDS ))
+        SHARD_COUNT=$(( SHARD_COUNT < 1 ? 1 : SHARD_COUNT ))
+
+        echo "count=$SHARD_COUNT" >> $GITHUB_OUTPUT
+        echo "shards=$(node -e "console.log(JSON.stringify({shard:[...Array($SHARD_COUNT)].map((_,i)=>i+1)}))")" >> $GITHUB_OUTPUT
+  
   test:
     runs-on: ubuntu-latest
     needs: generate-shards
@@ -61,13 +68,13 @@ jobs:
 
       - run: npm ci
       
-      - name: Run tests (shard ${{ matrix.shard }}/4)
+      - name: Run tests (shard ${{ matrix.shard }}/${{ needs.generate-shards.outputs.count }})
         run: |
           npm test -- \
             --coverage \
             --coverageReporters=lcov \
             --coverageThreshold='{}' \
-            --shard=${{ matrix.shard }}/${{ env.SHARD_COUNT }}
+            --shard=${{ matrix.shard }}/${{ needs.generate-shards.outputs.count }}
 
   coverage-upload:
     name: Upload Coverage
