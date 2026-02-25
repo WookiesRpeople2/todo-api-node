@@ -298,7 +298,7 @@ jobs:
     name: Deploy to Staging
     needs: build-and-push
     if: github.ref == 'refs/heads/development'
-    uses: ./.github/workflows/deploy-argocd.yml
+    uses: ./.github/workflows/argocd.yaml
     with:
       environment: staging
     secrets: inherit
@@ -307,7 +307,7 @@ jobs:
     name: Deploy to Development
     needs: build-and-push
     if: github.ref == 'refs/heads/intergration'
-    uses: ./.github/workflows/deploy-argocd.yml
+    uses: ./.github/workflows/argocd.yaml
     with:
       environment: development
     secrets: inherit
@@ -316,7 +316,7 @@ jobs:
     name: Deploy to Production
     needs: build-and-push
     if: github.ref == 'refs/heads/main'
-    uses: ./.github/workflows/deploy-argocd.yml
+    uses: ./.github/workflows/argocd.yaml
     with:
       environment: production
     secrets: inherit
