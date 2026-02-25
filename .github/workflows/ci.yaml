@@ -38,20 +38,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 3
           token: ${{ secrets.CASCADE_PAT }}
 
       - name: Check previous commit message
         id: check-commit
         run: |
-          PREV_MSG=$(git log --format=%s -n 1 HEAD~1)
-          echo "Previous commit: $PREV_MSG"
-          if echo "$PREV_MSG" | grep -q '^chore(main): release'; then
+          PREV_MSG_1=$(git log --format=%s -n 1 HEAD~1)
+          PREV_MSG_2=$(git log --format=%s -n 1 HEAD~2)
+          echo "Previous commit 1: $PREV_MSG_1"
+          echo "Previous commit 2: $PREV_MSG_2"
+          if echo "$PREV_MSG_1" | grep -q '^chore(main): release' || \
+            echo "$PREV_MSG_2" | grep -q '^chore(main): release'; then
             echo "match=true" >> $GITHUB_OUTPUT
           else
             echo "match=false" >> $GITHUB_OUTPUT
           fi
-
       - name: Configure Git
         if: steps.check-commit.outputs.match == 'true'
         run: |
