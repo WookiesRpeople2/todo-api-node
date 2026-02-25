@@ -106,17 +106,19 @@ jobs:
 
       - run: npm ci
 
-      - name: Install lcov
-        run: sudo apt-get install -y lcov
-
       - name: Merge lcov.info files
-        run: |
-          mkdir -p coverage
-          find coverage-shards -name "lcov.info" \
-            | xargs -I{} echo "--add-tracefile {}" \
-            | xargs lcov --output-file coverage/lcov.info
+        env:
+          SHARDS_DIR: coverage-shards
+          OUT_DIR: coverage
+          MERGE_MODE: lcov
+        run: npm run coverage:merge
+
 
       - name: Merge coverage-final.json files
+        env:
+          SHARDS_DIR: coverage-shards
+          OUT_DIR: coverage
+          MERGE_MODE: json
         run: npm run coverage:merge
 
       - name: Enforce Jest coverage thresholds
