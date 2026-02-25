@@ -121,6 +121,8 @@ jobs:
         run: npm run coverage:merge
 
       - name: Enforce Jest coverage thresholds
+        env:
+          DIR: coverage
         run: npm run coverage:verify
 
       - name: Upload merged coverage to Codecov
