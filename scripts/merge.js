@@ -1,5 +1,5 @@
-import fs from 'fs';
-import path from 'path';
+const fs = require('fs');
+const path = require('path');
 
 const shardsDir = path.resolve(process.env.SHARDS_DIR ?? 'coverage-shards');
 const outDir = path.resolve(process.env.OUT_DIR ?? 'coverage');
