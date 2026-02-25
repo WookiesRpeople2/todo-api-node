@@ -295,7 +295,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   deploy-development:
-    name: Deploy to Staging
+    name: Deploy to Development
     needs: build-and-push
     if: github.ref == 'refs/heads/development'
     uses: ./.github/workflows/argocd.yaml
@@ -304,7 +304,7 @@ jobs:
     secrets: inherit
 
   deploy-staging:
-    name: Deploy to Development
+    name: Deploy to Staging
     needs: build-and-push
     if: github.ref == 'refs/heads/intergration'
     uses: ./.github/workflows/argocd.yaml

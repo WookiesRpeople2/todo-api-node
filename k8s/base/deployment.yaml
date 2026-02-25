@@ -17,7 +17,7 @@ spec:
       imagePullSecrets:
         - name: ghcr-secret
       containers:
-        - name: core
+        - name: todo
           image: ghcr.io/wookiesrpeople2/todo-api-node:latest
           imagePullPolicy: IfNotPresent
           ports:
