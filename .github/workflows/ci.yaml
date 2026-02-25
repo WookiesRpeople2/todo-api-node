@@ -115,7 +115,7 @@ jobs:
 
       - name: Merge lcov.info files
         env:
-          SHARDS_DIR: coverage-shards
+          SHARDS_DIR: coverage
           OUT_DIR: coverage
           MERGE_MODE: lcov
         run: npm run coverage:merge
@@ -123,7 +123,7 @@ jobs:
 
       - name: Merge coverage-final.json files
         env:
-          SHARDS_DIR: coverage-shards
+          SHARDS_DIR: coverage
           OUT_DIR: coverage
           MERGE_MODE: json
         run: npm run coverage:merge
