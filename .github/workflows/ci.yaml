@@ -21,7 +21,7 @@ permissions:
   security-events: write
 
 jobs:
-  install:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,57 +29,29 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: npm
 
-      - name: Restore node_modules cache
-        id: cache
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: node-modules-${{ runner.os }}-${{ env.NODE_VERSION }}-${{ hashFiles('package-lock.json') }}
-
-      - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: npm ci
-
-      - name: Fix bin permissions
-        run: chmod -R +x node_modules/.bin
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: node-modules
-          path: node_modules
-          retention-days: 1
-
-  lint:
-    runs-on: ubuntu-latest
-    needs: install
-    steps:
-      - uses: actions/checkout@v4
-      
-      - uses: actions/download-artifact@v4
-        with:
-          name: node-modules
-          path: node_modules
+      - run: npm ci
 
       - name: Run linter
-        run: node_modules/.bin/eslint '**/*.js'
+        run: npx eslint '**/*.js'
 
   generate-shards:
     runs-on: ubuntu-latest
-    needs: install
     outputs:
       shards: ${{ steps.set.outputs.shards }}
       count: ${{ steps.set.outputs.count }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/setup-node@v4
         with:
-          name: node-modules
-          path: node_modules
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
       
+      - run: npm ci 
       - id: set
         run: |
-          FILE_COUNT=$(node_modules/.bin/jest --listTests --colors=false --silent | grep '\.test\.js$' | wc -l)
+          FILE_COUNT=$(npm test -- --listTests --colors=false --silent | grep '\.test\.js$' | wc -l)
           MAX_SHARDS=${{ env.MAX_SHARDS }}
           SHARD_COUNT=$(( FILE_COUNT < MAX_SHARDS ? FILE_COUNT : MAX_SHARDS ))
 
@@ -98,23 +70,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/setup-node@v4
         with:
-          name: node-modules
-          path: node_modules
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
 
+      - run: npm ci
+      
       - name: Run tests (shard ${{ matrix.shard }}/${{ needs.generate-shards.outputs.count }})
         run: |
-          node_modules/.bin/jest \
+          npm test -- \
             --coverage \
             --coverageReporters=lcov \
             --coverageThreshold='{}' \
             --shard=${{ matrix.shard }}/${{ needs.generate-shards.outputs.count }}
-      - name: Upload coverage shard
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-shard-${{ matrix.shard }}
-          path: coverage/lcov.info
 
   coverage-upload:
     name: Upload Coverage
@@ -130,10 +99,12 @@ jobs:
           merge-multiple: false
           path: coverage
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/setup-node@v4
         with:
-          name: node-modules
-          path: node_modules
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
 
       - name: Install lcov
         run: sudo apt-get install -y lcov
@@ -145,8 +116,8 @@ jobs:
             | xargs -I{} echo "--add-tracefile {}" \
             | xargs lcov --output-file coverage/lcov.info
 
-      - name: Merge coverage reports
-        run: npm run coverage:merge
+      - name: Merge coverage-final.json files
+        run: node scripts/merge-coverage.mjs
 
       - name: Enforce Jest coverage thresholds
         run: npm run coverage:verify
@@ -160,15 +131,16 @@ jobs:
 
   k6:
     name: k6 Performance Test
-    needs: install
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/setup-node@v4
         with:
-          name: node-modules
-          path: node_modules
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
 
       - name: Start server
         run: node app.js &
