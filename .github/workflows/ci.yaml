@@ -96,7 +96,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           pattern: coverage-shard-*
-          merge-multiple: true
+          merge-multiple: false
           path: coverage
 
       - uses: actions/setup-node@v4
