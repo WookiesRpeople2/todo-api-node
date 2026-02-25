@@ -294,28 +294,41 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  deploy-staging:
-    name: Deploy to Staging
+  deploy-development:
+    name: Deploy to development
     needs: build-and-push
-    if: |
-      needs.build-and-push.result == 'success' &&
-      github.ref == 'refs/heads/development'
+    if: github.ref == 'refs/heads/development'
     runs-on: ubuntu-latest
     environment:
-      name: staging
+      name: development
     steps:
-      - name: Deploy to staging
-        run: echo "Deploying to staging"
+      - name: Deploy to development
+        run: echo "Deploying to development"
+
+
+  deploy-development:
+    name: Deploy to Staging
+    needs: build-and-push
+    if: github.ref == 'refs/heads/development'
+    uses: ./.github/workflows/deploy-argocd.yml
+    with:
+      environment: staging
+    secrets: inherit
+
+  deploy-staging:
+    name: Deploy to Development
+    needs: build-and-push
+    if: github.ref == 'refs/heads/intergration'
+    uses: ./.github/workflows/deploy-argocd.yml
+    with:
+      environment: development
+    secrets: inherit
 
   deploy-production:
     name: Deploy to Production
     needs: build-and-push
-    if: |
-      needs.build-and-push.result == 'success' &&
-      github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    environment:
-      name: production
-    steps:
-      - name: Deploy to production
-        run: echo "Deploying to production"
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/deploy-argocd.yml
+    with:
+      environment: production
+    secrets: inherit
