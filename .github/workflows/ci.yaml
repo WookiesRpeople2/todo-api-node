@@ -36,21 +36,21 @@ jobs:
       - name: Run linter
         run: npx eslint '**/*.js'
 
-generate-shards:
-  runs-on: ubuntu-latest
-  outputs:
-    shards: ${{ steps.set.outputs.shards }}
-    count: ${{ steps.set.outputs.count }}
-  steps:
-    - uses: actions/checkout@v4
-      run: |
-        FILE_COUNT=$(npm test -- --listTests 2>/dev/null | wc -l | tr -d ' ')
+  generate-shards:
+    runs-on: ubuntu-latest
+    outputs:
+      shards: ${{ steps.set.outputs.shards }}
+      count: ${{ steps.set.outputs.count }}
+    steps:
+      - uses: actions/checkout@v4
+        run: |
+          FILE_COUNT=$(npm test -- --listTests 2>/dev/null | wc -l | tr -d ' ')
 
-        SHARD_COUNT=$(( FILE_COUNT < MAX_SHARDS ? FILE_COUNT : MAX_SHARDS ))
-        SHARD_COUNT=$(( SHARD_COUNT < 1 ? 1 : SHARD_COUNT ))
+          SHARD_COUNT=$(( FILE_COUNT < MAX_SHARDS ? FILE_COUNT : MAX_SHARDS ))
+          SHARD_COUNT=$(( SHARD_COUNT < 1 ? 1 : SHARD_COUNT ))
 
-        echo "count=$SHARD_COUNT" >> $GITHUB_OUTPUT
-        echo "shards=$(node -e "console.log(JSON.stringify({shard:[...Array($SHARD_COUNT)].map((_,i)=>i+1)}))")" >> $GITHUB_OUTPUT
+          echo "count=$SHARD_COUNT" >> $GITHUB_OUTPUT
+          echo "shards=$(node -e "console.log(JSON.stringify({shard:[...Array($SHARD_COUNT)].map((_,i)=>i+1)}))")" >> $GITHUB_OUTPUT
   
   test:
     runs-on: ubuntu-latest
