@@ -108,12 +108,13 @@ jobs:
 
       - name: Merge coverage reports
         run: |
-          npx nyc merge coverage coverage/coverage-final.json
-          npx nyc report \
-            --reporter=lcov \
-            --report-dir=coverage \
-            --temp-dir=coverage
-      
+          npx istanbul-merge \
+            --out coverage/coverage-final.json \
+            coverage/coverage-shard-*/coverage-final.json
+          lcov \
+            $(find coverage/coverage-shard-* -name 'lcov.info' -exec echo --add-tracefile {} \;) \
+            --output-file coverage/lcov.info
+
       - name: Enforce Jest coverage thresholds
         run: npm run coverage:verify
 
