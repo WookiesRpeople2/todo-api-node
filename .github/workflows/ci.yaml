@@ -21,7 +21,7 @@ permissions:
   security-events: write
 
 jobs:
-  lint:
+  install:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,9 +29,33 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: npm
 
-      - run: npm ci
+      - name: Restore node_modules cache
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ env.NODE_VERSION }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: node-modules
+          path: node_modules
+          retention-days: 1
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/download-artifact@v4
+        with:
+          name: node-modules
+          path: node_modules
 
       - name: Run linter
         run: npx eslint '**/*.js'
@@ -43,12 +67,11 @@ jobs:
       count: ${{ steps.set.outputs.count }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/download-artifact@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
+          name: node-modules
+          path: node_modules
       
-      - run: npm ci 
       - id: set
         run: |
           FILE_COUNT=$(npx jest --listTests --colors=false --silent | grep '\.test\.js$' | wc -l)
@@ -70,13 +93,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/download-artifact@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
+          name: node-modules
+          path: node_modules
 
-      - run: npm ci
-      
       - name: Run tests (shard ${{ matrix.shard }}/${{ needs.generate-shards.outputs.count }})
         run: |
           npm test -- \
@@ -99,12 +120,10 @@ jobs:
           merge-multiple: false
           path: coverage
 
-      - uses: actions/setup-node@v4
+      - uses: actions/download-artifact@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-
-      - run: npm ci
+          name: node-modules
+          path: node_modules
 
       - name: Merge coverage reports
         run: |
@@ -131,12 +150,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/download-artifact@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-
-      - run: npm ci
+          name: node-modules
+          path: node_modules
 
       - name: Start server
         run: node app.js &
