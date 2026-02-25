@@ -113,14 +113,6 @@ jobs:
 
       - run: npm ci
 
-      - name: Merge lcov.info files
-        env:
-          SHARDS_DIR: coverage
-          OUT_DIR: coverage
-          MERGE_MODE: lcov
-        run: npm run coverage:merge
-
-
       - name: Merge coverage-final.json files
         env:
           SHARDS_DIR: coverage
@@ -136,6 +128,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage/lcov.info
+          flags: shard-${{ matrix.shard }}
           fail_ci_if_error: true
 
   k6:
