@@ -46,10 +46,10 @@ jobs:
 
       - id: set
         run: |
-          FILE_COUNT=$(npm test -- --listTests --colors=false --silent | grep '\.test\.js$' | wc -l)
+          FILE_COUNT=$(npx jest -- --listTests --colors=false --silent | grep '\.test\.js$' | wc -l)
 
           SHARD_COUNT=$(( FILE_COUNT < MAX_SHARDS ? FILE_COUNT : MAX_SHARDS ))
-          SHARD_COUNT=$(( SHARD_COUNT < 1 ? 1 : SHARD_COUNT ))
+          SHARD_COUNT=$(( SHARD_COUNT ))
 
           echo "count=$SHARD_COUNT" >> $GITHUB_OUTPUT
           echo "shards=$(node -e "console.log(JSON.stringify({shard:[...Array($SHARD_COUNT)].map((_,i)=>i+1)}))")" >> $GITHUB_OUTPUT
@@ -92,6 +92,7 @@ jobs:
 
       - name: Enforce Jest coverage thresholds
         run: npm run coverage:verify
+        run: ls -la
 
       - name: Upload merged coverage to Codecov
         uses: codecov/codecov-action@v4
