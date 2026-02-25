@@ -16,7 +16,7 @@ env:
 
 permissions:
   actions: read
-  contents: read
+  contents: write
   packages: write
   pull-requests: write
   security-events: write
