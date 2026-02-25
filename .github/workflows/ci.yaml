@@ -57,20 +57,20 @@ jobs:
           token: ${{ secrets.CASCADE_PAT }}
 
       - name: Configure Git
-        if: steps.check-commit.outputs.match == 'true'
+        if: steps.check-pr.outputs.match == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Merge main into intergration
-        if: steps.check-commit.outputs.match == 'true'
+        if: steps.check-pr.outputs.match == 'true'
         run: |
           git checkout intergration
           git merge origin/main --no-ff -m "chore: cascade merge main into intergration"
           git push origin intergration
 
       - name: Merge integration into development
-        if: steps.check-commit.outputs.match == 'true'
+        if: steps.check-pr.outputs.match == 'true'
         run: |
           git checkout development
           git merge origin/intergration --no-ff -m "chore: cascade merge integration into development"
