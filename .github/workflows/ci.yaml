@@ -122,7 +122,7 @@ jobs:
 
       - name: Enforce Jest coverage thresholds
         env:
-          DIR: coverage
+          DIR: coverage/coverage-final.json
         run: npm run coverage:verify
 
       - name: Upload merged coverage to Codecov
