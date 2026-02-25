@@ -16,6 +16,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: node
+          skip-github-release: true
 
   cascade-merge:
     runs-on: ubuntu-latest
