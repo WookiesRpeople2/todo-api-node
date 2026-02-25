@@ -1,12 +1,5 @@
 # Changelog
 
-## [1.1.0](https://github.com/WookiesRpeople2/todo-api-node/compare/v1.0.0...v1.1.0) (2026-02-25)
-
-
-### Features
-
-* add shrding to jest tests ([82483b2](https://github.com/WookiesRpeople2/todo-api-node/commit/82483b22823aee9a5dc1e16b13c2bf65ec712ff9))
-
 ## 1.0.0 (2026-02-24)
 
 
