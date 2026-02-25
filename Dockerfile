@@ -14,6 +14,7 @@ RUN addgroup -S nodejs && adduser -S nodejs -G nodejs
 WORKDIR /app
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package*.json ./
+RUN npm ci --production
 USER nodejs
 EXPOSE 3000
 CMD ["node", "dist/app.js"]
