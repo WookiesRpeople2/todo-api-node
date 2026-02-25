@@ -10,7 +10,6 @@ router.post("/", async (req, res) => {
   if (!title) {
     return res.status(422).json({ detail: "title is required" });
   }
-  console.log("creating todo: " + title);
   const db = await getDb();
   db.run("INSERT INTO todos (title, description, status) VALUES (?, ?, ?)", [title, description, status]);
   const id = db.exec("SELECT last_insert_rowid() as id")[0].values[0][0];
@@ -26,9 +25,8 @@ router.get("/", async (req, res) => {
   const limit = parseInt(req.query.limit) || 10;
   const db = await getDb();
   const rows = db.exec("SELECT * FROM todos LIMIT ? OFFSET ?", [limit, skip]);
-  var x = toArray(rows);
-  console.log("found " + x.length + " todos");
-  res.json(formatTodos(x));
+  const todos = toArray(rows);
+  res.json(formatTodos(todos));
 });
 
 // Fetch a single todo by id
