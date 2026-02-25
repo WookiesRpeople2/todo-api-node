@@ -41,6 +41,9 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
 
+      - name: Fix bin permissions
+        run: chmod -R +x node_modules/.bin
+
       - uses: actions/upload-artifact@v4
         with:
           name: node-modules
