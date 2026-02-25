@@ -33,8 +33,35 @@ npm test
 ## Environment variables
 
 - `PORT`: server port (default 3000)
-- `SECRET_KEY`: used only by `/debug`
-- `API_KEY`: used only by `/debug`
+
+## Docker
+
+Build the Docker image:
+
+```bash
+docker build -t todo-api .
+```
+
+Run the container:
+
+```bash
+# Without port mapping (uses default 3000)
+docker run todo-api
+
+# With custom port
+docker run -p 8080:3000 todo-api
+
+# With environment variables
+docker run -e PORT=8080 todo-api
+```
+
+Run with docker-compose:
+
+```bash
+docker-compose up
+```
+
+The API will be available at `http://localhost:3000` (or your configured PORT).
 
 ### Health
 
