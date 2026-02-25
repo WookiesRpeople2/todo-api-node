@@ -43,7 +43,12 @@ jobs:
       count: ${{ steps.set.outputs.count }}
     steps:
       - uses: actions/checkout@v4
-
+      - uses: actions/setup-node@v4        # ← ADD THIS
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      
+      - run: npm ci 
       - id: set
         run: |
           FILE_COUNT=$(npx jest -- --listTests --colors=false --silent | grep '\.test\.js$' | wc -l)
@@ -92,8 +97,6 @@ jobs:
 
       - name: Enforce Jest coverage thresholds
         run: npm run coverage:verify
-      - name: Debug workspace
-        run: ls -la
 
       - name: Upload merged coverage to Codecov
         uses: codecov/codecov-action@v4
