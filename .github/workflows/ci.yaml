@@ -92,6 +92,7 @@ jobs:
 
       - name: Enforce Jest coverage thresholds
         run: npm run coverage:verify
+      - name: Debug workspace
         run: ls -la
 
       - name: Upload merged coverage to Codecov
