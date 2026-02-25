@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/WookiesRpeople2/todo-api-node/compare/v1.3.0...v1.4.0) (2026-02-25)
+
+
+### Features
+
+* look back into commits ([c33ac88](https://github.com/WookiesRpeople2/todo-api-node/commit/c33ac88bf5c265efed2e3577eb9e91d6fd2aa2d7))
+
 ## [1.3.0](https://github.com/WookiesRpeople2/todo-api-node/compare/v1.2.0...v1.3.0) (2026-02-25)
 
 
