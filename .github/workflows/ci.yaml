@@ -46,7 +46,7 @@ jobs:
 
       - id: set
         run: |
-          FILE_COUNT=$(npm test -- --listTests | grep '\.test\.js$' | wc -l)
+          FILE_COUNT=$(npm test -- --listTests 2>/dev/null | grep '\.test\.js$' | wc -l)
 
           SHARD_COUNT=$(( FILE_COUNT < MAX_SHARDS ? FILE_COUNT : MAX_SHARDS ))
           SHARD_COUNT=$(( SHARD_COUNT < 1 ? 1 : SHARD_COUNT ))
