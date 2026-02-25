@@ -16,7 +16,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: node
 
-    cascade-merge:
+  cascade-merge:
     if: startsWith(github.event.head_commit.message, 'chore(main):\ release')
     runs-on: ubuntu-latest
     needs: release-please
