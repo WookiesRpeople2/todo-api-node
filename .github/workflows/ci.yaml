@@ -90,12 +90,21 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       - name: Download all coverage artifacts
         uses: actions/download-artifact@v4
         with:
           pattern: coverage-shard-*
           merge-multiple: true
           path: coverage
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
 
       - name: Enforce Jest coverage thresholds
         run: npm run coverage:verify
