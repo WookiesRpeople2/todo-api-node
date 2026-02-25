@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.6.0](https://github.com/WookiesRpeople2/todo-api-node/compare/v1.5.0...v1.6.0) (2026-02-25)
+
+
+### Features
+
+* autmatic mergining working ([a879caa](https://github.com/WookiesRpeople2/todo-api-node/commit/a879caa7b5e03c7a5bf6301acf4c7aae701ee6ff))
+
+## [1.5.0](https://github.com/WookiesRpeople2/todo-api-node/compare/v1.4.0...v1.5.0) (2026-02-25)
+
+
+### Features
+
+* look back int pr names ([c6ed1d8](https://github.com/WookiesRpeople2/todo-api-node/commit/c6ed1d8e138842532aacad48feb4e1540725b603))
+
+## [1.4.0](https://github.com/WookiesRpeople2/todo-api-node/compare/v1.3.0...v1.4.0) (2026-02-25)
+
+
+### Features
+
+* look back into commits ([c33ac88](https://github.com/WookiesRpeople2/todo-api-node/commit/c33ac88bf5c265efed2e3577eb9e91d6fd2aa2d7))
+
+## [1.3.0](https://github.com/WookiesRpeople2/todo-api-node/compare/v1.2.0...v1.3.0) (2026-02-25)
+
+
+### Features
+
+* added release plese to ci workflow file ([2c458e3](https://github.com/WookiesRpeople2/todo-api-node/commit/2c458e37a2d1efe14f551c1d6d8d888d77ba6438))
+
 ## [1.2.0](https://github.com/WookiesRpeople2/todo-api-node/compare/v1.1.0...v1.2.0) (2026-02-25)
 
 
