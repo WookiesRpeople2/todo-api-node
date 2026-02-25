@@ -33,7 +33,7 @@ jobs:
 
       - run: npm ci
 
-      - name: Run linter
+      - name: Lint
         run: npx eslint '**/*.js'
 
   generate-shards:
@@ -92,7 +92,7 @@ jobs:
 
 
   coverage-upload:
-    name: Upload Coverage
+    name: Codecov Quality Gate
     needs: test
     runs-on: ubuntu-latest
     steps:
@@ -116,7 +116,6 @@ jobs:
         env:
           SHARDS_DIR: coverage
           OUT_DIR: coverage
-          MERGE_MODE: json
         run: npm run coverage:merge
 
       - name: Enforce Jest coverage thresholds
@@ -184,7 +183,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up Docker Buildx
+      - name: Docker Buildx Build and Push
         uses: docker/setup-buildx-action@v3
 
       - name: Extract metadata
