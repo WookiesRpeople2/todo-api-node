@@ -18,7 +18,7 @@ spec:
         - name: ghcr-secret
       containers:
         - name: core
-          image: ghcr.io/lootopia-org/core:latest
+          image: ghcr.io/wookiesrpeople2/todo-api-node:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
