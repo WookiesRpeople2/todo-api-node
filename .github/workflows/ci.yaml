@@ -36,24 +36,26 @@ jobs:
     needs: release-please
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 3
-          token: ${{ secrets.CASCADE_PAT }}
-
-      - name: Check previous commit message
-        id: check-commit
+      - name: Check PR title
+        id: check-pr
+        env:
+          GH_TOKEN: ${{ secrets.CASCADE_PAT }}
         run: |
-          PREV_MSG_1=$(git log --format=%s -n 1 HEAD~1)
-          PREV_MSG_2=$(git log --format=%s -n 1 HEAD~2)
-          echo "Previous commit 1: $PREV_MSG_1"
-          echo "Previous commit 2: $PREV_MSG_2"
-          if echo "$PREV_MSG_1" | grep -q '^chore(main): release' || \
-            echo "$PREV_MSG_2" | grep -q '^chore(main): release'; then
+          PR_TITLE=$(gh pr list --repo ${{ github.repository }} --state merged --base main --json title,mergeCommit \
+            --jq '.[] | select(.mergeCommit.oid == "${{ github.sha }}") | .title')
+          echo "PR title: $PR_TITLE"
+          if echo "$PR_TITLE" | grep -q '^chore(main): release'; then
             echo "match=true" >> $GITHUB_OUTPUT
           else
             echo "match=false" >> $GITHUB_OUTPUT
           fi
+
+      - uses: actions/checkout@v4
+        if: steps.check-pr.outputs.match == 'true'
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.CASCADE_PAT }}
+
       - name: Configure Git
         if: steps.check-commit.outputs.match == 'true'
         run: |
