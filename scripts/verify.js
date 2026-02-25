@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const config = require("../jest.config.js");
 
-const file = path.resolve(__dirname, process.env.DIR);
+const file = path.resolve(process.cwd(), process.env.DIR);
 
 if (!fs.existsSync(file)) {
   console.error('Coverage file not found');
