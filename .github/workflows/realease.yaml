@@ -14,7 +14,7 @@ jobs:
     steps:
       - uses: googleapis/release-please-action@v4
         with:
-          token: ${{ secrets.CASCADE_PAT }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           release-type: node
 
   cascade-merge:
