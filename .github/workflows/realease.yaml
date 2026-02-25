@@ -34,7 +34,7 @@ jobs:
 
       - name: Merge main into integration
         run: |
-          git checkout integration
+          git checkout intergration
           git merge origin/main --no-ff -m "chore: cascade merge main into integration"
           git push origin integration
 
