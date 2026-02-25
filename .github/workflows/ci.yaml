@@ -78,7 +78,7 @@ jobs:
 
       - run: npm ci
       
-      - name: Run tests (shard ${{ matrix.shard }}/${{ needs.generate-shards.outputs.count }})
+      - name: Run test (shard ${{ matrix.shard }}/${{ needs.generate-shards.outputs.count }})
         run: |
           npm test -- \
             --coverage \
