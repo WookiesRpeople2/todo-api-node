@@ -43,6 +43,8 @@ jobs:
       count: ${{ steps.set.outputs.count }}
     steps:
       - uses: actions/checkout@v4
+
+      - id: set
         run: |
           FILE_COUNT=$(npm test -- --listTests 2>/dev/null | wc -l | tr -d ' ')
 
