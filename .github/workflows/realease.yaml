@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - main
-
 permissions:
   contents: write
   pull-requests: write
@@ -16,9 +15,9 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: node
-          skip-github-release: true
 
-  cascade-merge:
+    cascade-merge:
+    if: startsWith(github.event.head_commit.message, 'chore(main):\ release')
     runs-on: ubuntu-latest
     needs: release-please
     steps:
@@ -32,7 +31,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Merge main into integration
+      - name: Merge main into intergration
         run: |
           git checkout intergration
           git merge origin/main --no-ff -m "chore: cascade merge main into intergration"
@@ -41,5 +40,5 @@ jobs:
       - name: Merge integration into development
         run: |
           git checkout development
-          git merge origin/integration --no-ff -m "chore: cascade merge integration into development"
+          git merge origin/intergration --no-ff -m "chore: cascade merge integration into development"
           git push origin development
