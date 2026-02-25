@@ -300,7 +300,7 @@ jobs:
     if: github.ref == 'refs/heads/development'
     uses: ./.github/workflows/argocd.yaml
     with:
-      environment: staging
+      environment: development
     secrets: inherit
 
   deploy-staging:
@@ -309,7 +309,7 @@ jobs:
     if: github.ref == 'refs/heads/intergration'
     uses: ./.github/workflows/argocd.yaml
     with:
-      environment: development
+      environment: staging
     secrets: inherit
 
   deploy-production:
