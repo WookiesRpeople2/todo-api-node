@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/WookiesRpeople2/todo-api-node/compare/v1.2.0...v1.3.0) (2026-02-25)
+
+
+### Features
+
+* added release plese to ci workflow file ([2c458e3](https://github.com/WookiesRpeople2/todo-api-node/commit/2c458e37a2d1efe14f551c1d6d8d888d77ba6438))
+
 ## [1.2.0](https://github.com/WookiesRpeople2/todo-api-node/compare/v1.1.0...v1.2.0) (2026-02-25)
 
 
