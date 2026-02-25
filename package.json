@@ -8,7 +8,8 @@
     "test": "jest",
     "lint": "eslint '**/*.js'",
     "build": "node build.js",
-    "coverage:verify": "node jest.config.js",
+    "coverage:verify": "node scripts/verify",
+    "coverage:merge": "node scripts/merge"
     "knip": "knip"
   },
   "dependencies": {

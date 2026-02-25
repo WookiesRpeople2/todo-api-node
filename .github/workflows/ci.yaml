@@ -59,7 +59,7 @@ jobs:
           path: node_modules
 
       - name: Run linter
-        run: npx eslint '**/*.js'
+        run: node_modules/.bin/eslint '**/*.js'
 
   generate-shards:
     runs-on: ubuntu-latest
@@ -76,7 +76,7 @@ jobs:
       
       - id: set
         run: |
-          FILE_COUNT=$(npx jest --listTests --colors=false --silent | grep '\.test\.js$' | wc -l)
+          FILE_COUNT=$(node_modules/.bin/jest --listTests --colors=false --silent | grep '\.test\.js$' | wc -l)
           MAX_SHARDS=${{ env.MAX_SHARDS }}
           SHARD_COUNT=$(( FILE_COUNT < MAX_SHARDS ? FILE_COUNT : MAX_SHARDS ))
 
@@ -102,11 +102,16 @@ jobs:
 
       - name: Run tests (shard ${{ matrix.shard }}/${{ needs.generate-shards.outputs.count }})
         run: |
-          npm test -- \
+          node_modules/.bin/jest \
             --coverage \
             --coverageReporters=lcov \
             --coverageThreshold='{}' \
             --shard=${{ matrix.shard }}/${{ needs.generate-shards.outputs.count }}
+      - name: Upload coverage shard
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-shard-${{ matrix.shard }}
+          path: coverage/lcov.info
 
   coverage-upload:
     name: Upload Coverage
@@ -127,14 +132,18 @@ jobs:
           name: node-modules
           path: node_modules
 
-      - name: Merge coverage reports
+      - name: Install lcov
+        run: sudo apt-get install -y lcov
+
+      - name: Merge lcov.info files
         run: |
-          npx istanbul-merge \
-            --out coverage/coverage-final.json \
-            coverage/coverage-shard-*/coverage-final.json
-          lcov \
-            $(find coverage/coverage-shard-* -name 'lcov.info' -exec echo --add-tracefile {} \;) \
-            --output-file coverage/lcov.info
+          mkdir -p coverage
+          find coverage-shards -name "lcov.info" \
+            | xargs -I{} echo "--add-tracefile {}" \
+            | xargs lcov --output-file coverage/lcov.info
+
+      - name: Merge coverage reports
+        run: npm run coverage:merge
 
       - name: Enforce Jest coverage thresholds
         run: npm run coverage:verify
