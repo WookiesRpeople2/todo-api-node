@@ -6,7 +6,7 @@ const express = require("express");
 const swaggerUi = require("swagger-ui-express");
 const swaggerDocument = require("./swagger.json");
 const todoRouter = require("./routes/todo");
-const Flagsmith = require("flagsmith-nodejs");
+const { createFeatureFlags } = require("./featureFlags");
 const app = express();
 
 /**
@@ -22,21 +22,7 @@ const productionLazyImport = (callback) => {
   }
 };
 
-const flagsmith = new Flagsmith({
-  environmentKey: process.env.FLAGSMITH_KEY,
-});
-
-flagsmith.getEnvironmentFlags()
-  .then(() => {
-    if (flagsmith.hasFeature("new-checkout-flow")) {
-      app.get("/feat", (_req, res) => {
-        res.json({ message: "Feature-Flag" });
-      });
-    }
-  })
-  .catch((err) => {
-    console.error("Flagsmith init error:", err.message);
-  });
+const featureFlags = createFeatureFlags({ logger: console });
 
 // Parse incoming JSON request bodies
 app.use(express.json());
@@ -47,6 +33,17 @@ app.use(express.json());
  */
 app.get("/", (_req, res) => {
   res.json({ message: "Welcome to the Enhanced Express Todo App!" });
+});
+
+/**
+ * Feature-gated endpoint example.
+ * Always registered to keep app behavior deterministic; returns 404 when disabled.
+ */
+app.get("/feat", (_req, res) => {
+  if (!featureFlags.isEnabled("new-checkout-flow")) {
+    return res.status(404).json({ detail: "Feature disabled" });
+  }
+  return res.json({ message: "Feature-Flag" });
 });
 
 /**
