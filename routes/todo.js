@@ -3,6 +3,7 @@
  * Handles all CRUD operations for todos with parameterized queries for security
  */
 const { Router } = require("express");
+const Sentry = require("@sentry/node");
 const { getDb, saveDb } = require("../database/database");
 const logger = require("../logger.js");
 
@@ -10,11 +11,25 @@ const logger = require("../logger.js");
 const router = Router();
 
 /**
+ * Async route error handler wrapper
+ * Catches errors in async route handlers and sends them to Sentry if configured
+ */
+const asyncHandler = (fn) => (req, res, next) => {
+  return Promise.resolve(fn(req, res, next)).catch((error) => {
+    logger.error({ error: error.message }, "Route handler error");
+    if (process.env.SENTRY_DSN) {
+      Sentry.captureException(error);
+    }
+    res.status(500).json({ detail: "Internal server error" });
+  });
+};
+
+/**
  * POST /todos - Create a new todo
  * Body: { title: string (required), description?: string, status?: string }
  * Returns: Created todo with 201 status
  */
-router.post("/", async (req, res) => {
+router.post("/", asyncHandler(async (req, res) => {
   const { title, description = null, status = "pending" } = req.body;
   
   // Validate required field
@@ -35,14 +50,14 @@ router.post("/", async (req, res) => {
   const todo = toObj(row);
   logger.info({ id, title, status }, "POST /todos - Todo created successfully");
   res.status(201).json(formatTodo(todo));
-});
+}));
 
 /**
  * GET /todos - List todos with pagination
  * Query params: skip (default: 0), limit (default: 10)
  * Returns: Array of todos
  */
-router.get("/", async (req, res) => {
+router.get("/", asyncHandler(async (req, res) => {
   // Parse pagination parameters with defaults
   const skip = parseInt(req.query.skip) || 0;
   const limit = parseInt(req.query.limit) || 10;
@@ -52,13 +67,13 @@ router.get("/", async (req, res) => {
   const rows = db.exec("SELECT * FROM todos LIMIT ? OFFSET ?", [limit, skip]);
   const todos = toArray(rows);
   res.json(formatTodos(todos));
-});
+}));
 
 /**
  * GET /todos/:id - Fetch a single todo by id
  * Returns: Todo object or 404 if not found
  */
-router.get("/:id", async (req, res) => {
+router.get("/:id", asyncHandler(async (req, res) => {
   const db = await getDb();
   const rows = db.exec("SELECT * FROM todos WHERE id = ?", [req.params.id]);
   
@@ -70,7 +85,7 @@ router.get("/:id", async (req, res) => {
   
   logger.debug({ id: req.params.id }, "GET /todos/:id - Todo retrieved");
   res.json(formatTodo(toObj(rows)));
-});
+}));
 
 /**
  * PUT /todos/:id - Update todo fields
@@ -78,7 +93,7 @@ router.get("/:id", async (req, res) => {
  * Supports partial updates - omitted fields retain existing values
  * Returns: Updated todo or 404 if not found
  */
-router.put("/:id", async (req, res) => {
+router.put("/:id", asyncHandler(async (req, res) => {
   const db = await getDb();
   const existing = db.exec("SELECT * FROM todos WHERE id = ?", [req.params.id]);
   
@@ -100,13 +115,13 @@ router.put("/:id", async (req, res) => {
   
   logger.info({ id: req.params.id, title, status }, "PUT /todos/:id - Todo updated successfully");
   res.json(formatTodo(toObj(rows)));
-});
+}));
 
 /**
  * DELETE /todos/:id - Delete a todo by id
  * Returns: Success message or 404 if not found
  */
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", asyncHandler(async (req, res) => {
   const db = await getDb();
   const existing = db.exec("SELECT * FROM todos WHERE id = ?", [req.params.id]);
   
@@ -119,21 +134,21 @@ router.delete("/:id", async (req, res) => {
   saveDb();
   logger.info({ id: req.params.id }, "DELETE /todos/:id - Todo deleted successfully");
   res.json({ detail: "Todo deleted" });
-});
+}));
 
 /**
  * GET /todos/search/all - Search todos by title
  * Query param: q (search query, searches with LIKE pattern matching)
  * Returns: Array of matching todos
  */
-router.get("/search/all", async (req, res) => {
+router.get("/search/all", asyncHandler(async (req, res) => {
   const q = req.query.q || "";
   const db = await getDb();
   
   // Use parameterized LIKE query with wildcards for partial matching
   const results = db.exec("SELECT * FROM todos WHERE title LIKE ?", [`%${q}%`]);
   res.json(toArray(results));
-});
+}));
 
 /**
  * Convert first SQL result row to JavaScript object
