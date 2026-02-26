@@ -8,6 +8,7 @@ spec:
     spec:
       containers:
         - name: todo
+          image: ghcr.io/wookiesrpeople2/todo-api-node:latest
           envFrom:
             - configMapRef:
                 name: todo-config

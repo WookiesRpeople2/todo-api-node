@@ -119,61 +119,18 @@ jobs:
             fi
 
             if [ "$WORKLOAD_KIND" = "rollout" ]; then
-              # Ensure Argo Rollouts CLI is available on the server.
-              # Preferred: `kubectl-argo-rollouts` (standalone). Alternative: `kubectl argo rollouts` (plugin).
-              ROLLOUTS_CMD=""
-              if command -v kubectl-argo-rollouts >/dev/null 2>&1; then
-                ROLLOUTS_CMD="kubectl-argo-rollouts"
-              elif kubectl argo rollouts version >/dev/null 2>&1; then
-                ROLLOUTS_CMD="kubectl argo rollouts"
-              else
-                ARCH="$(uname -m)"
-                case "$ARCH" in
-                  x86_64|amd64) BIN_ARCH="amd64" ;;
-                  aarch64|arm64) BIN_ARCH="arm64" ;;
-                  *)
-                    echo "Unsupported architecture for auto-install: $ARCH"
-                    exit 1
-                    ;;
-                esac
-
-                # Pin a known-good version; override by setting ROLLOUTS_VERSION on the server if desired.
-                ROLLOUTS_VERSION="${ROLLOUTS_VERSION:-v1.7.2}"
-                BIN_URL="https://github.com/argoproj/argo-rollouts/releases/download/${ROLLOUTS_VERSION}/kubectl-argo-rollouts-linux-${BIN_ARCH}"
-
-                INSTALL_DIR="${HOME}/.local/bin"
-                mkdir -p "$INSTALL_DIR"
-                curl -fsSL "$BIN_URL" -o "${INSTALL_DIR}/kubectl-argo-rollouts"
-                chmod +x "${INSTALL_DIR}/kubectl-argo-rollouts"
-                export PATH="${INSTALL_DIR}:$PATH"
-
-                if ! command -v kubectl-argo-rollouts >/dev/null 2>&1; then
-                  echo "Failed to install kubectl-argo-rollouts"
-                  exit 1
-                fi
-                ROLLOUTS_CMD="kubectl-argo-rollouts"
-              fi
-
-              $ROLLOUTS_CMD set image "$ROLLOUT_NAME" \
-                "${ROLLOUT_CONTAINER}=${FULL_IMAGE}" \
-                -n "$NAMESPACE"
-
+              echo "GitOps mode enabled: skipping live image mutation for Rollout '${ROLLOUT_NAME}'."
+              echo "Argo CD should reconcile image/tag changes from Git."
               if [ "${{ inputs.canary_weight }}" -lt 100 ]; then
-                $ROLLOUTS_CMD set weight "$ROLLOUT_NAME" \
-                  --weight "${{ inputs.canary_weight }}" \
-                  -n "$NAMESPACE"
-              else
-                $ROLLOUTS_CMD promote "$ROLLOUT_NAME" -n "$NAMESPACE"
+                echo "canary_weight ignored in GitOps mode. Manage canary steps via Rollout manifest in Git."
               fi
+              kubectl get rollout "$ROLLOUT_NAME" -n "$NAMESPACE" -o wide
             else
-              kubectl set image "deployment/$ROLLOUT_NAME" \
-                "${ROLLOUT_CONTAINER}=${FULL_IMAGE}" \
-                -n "$NAMESPACE"
-
+              echo "GitOps mode enabled: skipping live image mutation for Deployment '${ROLLOUT_NAME}'."
+              echo "Argo CD should reconcile image/tag changes from Git."
               if [ "${{ inputs.canary_weight }}" -lt 100 ]; then
                 echo "canary_weight ignored: this environment is using a Deployment (no canary)."
               fi
-
               kubectl rollout status "deployment/$ROLLOUT_NAME" -n "$NAMESPACE"
             fi
 
