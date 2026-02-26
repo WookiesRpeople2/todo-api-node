@@ -6,7 +6,7 @@ const express = require("express");
 const swaggerUi = require("swagger-ui-express");
 const swaggerDocument = require("./swagger.json");
 const todoRouter = require("./routes/todo");
-const flagsmith = require("flagsmith-nodejs");
+const Flagsmith = require("flagsmith-nodejs");
 const app = express();
 
 /**
@@ -22,17 +22,21 @@ const productionLazyImport = (callback) => {
   }
 };
 
-flagsmith.init({
-  environmentID: process.env.FLAGSMITH_KEY,
-  onChange: (_oldFlags, _params) => {
-   if (flagsmith.hasFeature('new-checkout-flow')) {
-    app.get("/feat", (_req, res) => {
-      res.json({ message: "Feature-Flag" });
-    });
+const flagsmith = new Flagsmith({
+  environmentKey: process.env.FLAGSMITH_KEY,
+});
 
-   }
-  },
- });
+flagsmith.getEnvironmentFlags()
+  .then(() => {
+    if (flagsmith.hasFeature("new-checkout-flow")) {
+      app.get("/feat", (_req, res) => {
+        res.json({ message: "Feature-Flag" });
+      });
+    }
+  })
+  .catch((err) => {
+    console.error("Flagsmith init error:", err.message);
+  });
 
 // Parse incoming JSON request bodies
 app.use(express.json());
