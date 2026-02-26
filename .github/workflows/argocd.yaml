@@ -31,6 +31,45 @@ jobs:
           script: |
             set -euo pipefail
 
+            # Defaults (in case GitHub Environment vars aren't configured)
+            NAMESPACE="${{ vars.NAMESPACE }}"
+            if [ -z "$NAMESPACE" ]; then
+              NAMESPACE="${{ inputs.environment }}"
+            fi
+
+            REGISTRY="${{ vars.REGISTRY }}"
+            if [ -z "$REGISTRY" ]; then
+              REGISTRY="ghcr.io"
+            fi
+
+            IMAGE_NAME="${{ vars.IMAGE_NAME }}"
+            if [ -z "$IMAGE_NAME" ]; then
+              IMAGE_NAME="${{ github.repository }}"
+            fi
+
+            ROLLOUT_NAME="${{ vars.ROLLOUT_NAME }}"
+            if [ -z "$ROLLOUT_NAME" ]; then
+              ROLLOUT_NAME="app"
+            fi
+
+            ROLLOUT_CONTAINER="${{ vars.ROLLOUT_CONTAINER }}"
+            if [ -z "$ROLLOUT_CONTAINER" ]; then
+              ROLLOUT_CONTAINER="app"
+            fi
+
+            IMAGE_TAG="${{ inputs.image_tag }}"
+            IMAGE_REPO="${REGISTRY}/${IMAGE_NAME}"
+            if [ "${IMAGE_TAG#sha256:}" != "$IMAGE_TAG" ]; then
+              # Digest form (docker/build-push-action outputs sha256:... digests)
+              FULL_IMAGE="${IMAGE_REPO}@${IMAGE_TAG}"
+            else
+              FULL_IMAGE="${IMAGE_REPO}:${IMAGE_TAG}"
+            fi
+
+            echo "Using namespace: ${NAMESPACE}"
+            echo "Using rollout: ${ROLLOUT_NAME} (container: ${ROLLOUT_CONTAINER})"
+            echo "Using image: ${FULL_IMAGE}"
+
             # Ensure Argo Rollouts kubectl plugin exists on the remote host.
             # `kubectl argo rollouts ...` maps to the binary `kubectl-argo-rollouts` in PATH.
             if ! command -v kubectl-argo-rollouts >/dev/null 2>&1; then
@@ -57,11 +96,11 @@ jobs:
             echo "${{ vars.TEMPLATE }}" | kubectl apply -f -
 
             if [ "${{ inputs.canary_weight }}" -lt 100 ]; then
-              kubectl argo rollouts set image app \
-                app=${{ vars.REGISTRY }}/${{ vars.IMAGE_NAME }}:${{ inputs.image_tag }} \
-                -n ${{ vars.NAMESPACE }}
+              kubectl argo rollouts set image "$ROLLOUT_NAME" \
+                "${ROLLOUT_CONTAINER}=${FULL_IMAGE}" \
+                -n "$NAMESPACE"
             else
-              kubectl argo rollouts promote app -n ${{ vars.NAMESPACE }}
+              kubectl argo rollouts promote "$ROLLOUT_NAME" -n "$NAMESPACE"
             fi
 
   rollback:
@@ -80,6 +119,16 @@ jobs:
           port: ${{ secrets.SERVER_PORT }}
           script: |
             set -euo pipefail
+
+            NAMESPACE="${{ vars.NAMESPACE }}"
+            if [ -z "$NAMESPACE" ]; then
+              NAMESPACE="${{ inputs.environment }}"
+            fi
+
+            ROLLOUT_NAME="${{ vars.ROLLOUT_NAME }}"
+            if [ -z "$ROLLOUT_NAME" ]; then
+              ROLLOUT_NAME="app"
+            fi
 
             if ! command -v kubectl-argo-rollouts >/dev/null 2>&1; then
               echo "kubectl-argo-rollouts not found; installing to \$HOME/.local/bin ..."
@@ -102,5 +151,5 @@ jobs:
               echo "Installed kubectl-argo-rollouts (${VERSION})"
             fi
 
-            kubectl argo rollouts undo app -n ${{ vars.NAMESPACE }}
+            kubectl argo rollouts undo "$ROLLOUT_NAME" -n "$NAMESPACE"
             echo "Rolled back ${{ inputs.environment }} to previous revision"
