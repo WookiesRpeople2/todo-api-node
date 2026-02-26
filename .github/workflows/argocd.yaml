@@ -94,15 +94,6 @@ jobs:
 
             echo "${{ vars.TEMPLATE }}" | kubectl apply -f -
 
-            if ! kubectl get crd rollouts.argoproj.io >/dev/null 2>&1; then
-              echo "Argo Rollouts CRD (rollouts.argoproj.io) not found in the cluster."
-              echo "Skipping: kubectl argo rollouts ..."
-              echo "Fix options:"
-              echo "  - Install Argo Rollouts in the cluster and deploy kind: Rollout resources"
-              echo "  - Or remove Rollouts usage and use standard Deployments"
-              exit 0
-            fi
-
             if [ "${{ inputs.canary_weight }}" -lt 100 ]; then
               kubectl argo rollouts set image "$ROLLOUT_NAME" \
                 "${ROLLOUT_CONTAINER}=${FULL_IMAGE}" \
