@@ -34,6 +34,19 @@ app.get("/", (_req, res) => {
 });
 
 /**
+ * Health endpoint
+ * Returns API health status and metadata
+ */
+app.get("/health", (_req, res) => {
+  res.json({
+    status: "UP",
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || "development",
+    uptime: process.uptime(),
+  });
+});
+
+/**
  * Debug endpoint - only available in development/test environments
  * Exposes environment variables for debugging purposes
  * Automatically disabled when NODE_ENV=production
