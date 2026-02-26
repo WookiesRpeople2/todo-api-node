@@ -252,6 +252,7 @@ jobs:
 
   build-and-push:
     name: Build and Push Docker Image
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/intergration' || github.ref == 'refs/heads/development'
     needs: [lint, tests-complete, k6]
     runs-on: ubuntu-latest
     permissions:
@@ -301,24 +302,6 @@ jobs:
     uses: ./.github/workflows/argocd.yaml
     with:
       environment: development
-    secrets: inherit
-
-  deploy-staging:
-    name: Deploy to Staging
-    needs: build-and-push
-    if: github.ref == 'refs/heads/intergration'
-    uses: ./.github/workflows/argocd.yaml
-    with:
-      environment: staging
-    secrets: inherit
-
-    deploy-development:
-    name: Deploy to Development
-    needs: build-and-push
-    if: github.ref == 'refs/heads/development'
-    uses: ./.github/workflows/argocd.yaml
-    with:
-      environment: development
       image_tag: ${{ needs.build-and-push.outputs.image-digest }}
     secrets: inherit
 
@@ -331,7 +314,6 @@ jobs:
       environment: staging
       image_tag: ${{ needs.build-and-push.outputs.image-digest }}
     secrets: inherit
-
 
   deploy-production-canary:
     name: Deploy to Production (Canary 20%)
@@ -354,3 +336,45 @@ jobs:
       canary_weight: 100
       image_tag: ${{ needs.build-and-push.outputs.image-digest }}
     secrets: inherit
+
+  sync-feature-flags:
+    name: Sync Feature Flags
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/intergration' || github.ref == 'refs/heads/development'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set environment name and Flagsmith key
+        id: config
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "env=production" >> $GITHUB_OUTPUT
+            echo "key=${{ secrets.FLAGSMITH_KEY_PRODUCTION }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" = "refs/heads/intergration" ]; then
+            echo "env=staging" >> $GITHUB_OUTPUT
+            echo "key=${{ secrets.FLAGSMITH_KEY_STAGING }}" >> $GITHUB_OUTPUT
+          else
+            echo "env=development" >> $GITHUB_OUTPUT
+            echo "key=${{ secrets.FLAGSMITH_KEY_DEVELOPMENT }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Sync flags to Flagsmith
+        env:
+          FLAGSMITH_KEY: ${{ steps.config.outputs.key }}
+          ENVIRONMENT: ${{ steps.config.outputs.env }}
+        run: |
+          FLAGS=$(cat .github/feature-flags.json)
+
+          echo "$FLAGS" | jq -c '.[]' | while read -r flag; do
+            NAME=$(echo "$flag" | jq -r '.name')
+            ENABLED=$(echo "$flag" | jq -r --arg env "$ENVIRONMENT" '.[$env]')
+
+            echo "Setting $NAME to $ENABLED in $ENVIRONMENT..."
+
+            curl -sf -X POST "https://edge.api.flagsmith.com/api/v1/flags/" \
+              -H "X-Environment-Key: $FLAGSMITH_KEY" \
+              -H "Content-Type: application/json" \
+              -d "{\"feature_state_value\": null, \"enabled\": $ENABLED, \"feature\": {\"name\": \"$NAME\"}}"
+
+            echo "✅ $NAME = $ENABLED"
+          done

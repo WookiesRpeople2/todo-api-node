@@ -34,8 +34,8 @@ spec:
               memory: "512Mi"
     strategy:
       canary:
-        canaryService: app-canary
-        stableService: app-stable
+        canaryService: todo-canary
+        stableService: todo-stable
         steps:
           - setWeight: 20
           - pause: { duration: 60s }
