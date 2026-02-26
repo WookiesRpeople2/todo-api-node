@@ -344,14 +344,14 @@ jobs:
       image_tag: ${{ needs.build-and-push.outputs.image-digest }}
     secrets: inherit
 
-  rollback:
-    name: Rollback on failure
-    runs-on: ubuntu-latest
-    needs: [deploy-development, deploy-staging, deploy-production-canary, deploy-production]
-    if: failure()
-    steps:
-      - name: Rollback triggered
-        run: echo "Rollback handled by argocd.yaml reusable workflow per environment"
+  # rollback:
+  #   name: Rollback on failure
+  #   runs-on: ubuntu-latest
+  #   needs: [deploy-development, deploy-staging, deploy-production-canary, deploy-production]
+  #   if: failure()
+  #   steps:
+  #     - name: Rollback triggered
+  #       run: echo "Rollback handled by argocd.yaml reusable workflow per environment"
 
   sync-feature-flags:
     name: Sync Feature Flags
@@ -394,3 +394,39 @@ jobs:
 
             echo "✅ $NAME = $ENABLED"
           done
+
+  notify-discord:
+    name: Notify Discord
+    runs-on: ubuntu-latest
+    needs: [deploy-development, deploy-staging, deploy-production-canary, deploy-production]
+    if: always()
+    steps:
+      - name: Notify Discord
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          STATUS="${{ job.status }}"
+          COLOR=3066993   # green
+          EMOJI="✅"
+
+          if [ "$STATUS" != "success" ]; then
+            COLOR=15158332  # red
+            EMOJI="❌"
+          fi
+
+          curl -H "Content-Type: application/json" \
+               -X POST \
+               -d "{
+                 \"embeds\": [{
+                   \"title\": \"$EMOJI ${{ github.repository }} — Build $STATUS\",
+                   \"color\": $COLOR,
+                   \"fields\": [
+                     { \"name\": \"Branch\", \"value\": \"${{ github.ref_name }}\", \"inline\": true },
+                     { \"name\": \"Triggered by\", \"value\": \"${{ github.actor }}\", \"inline\": true },
+                     { \"name\": \"Commit\", \"value\": \"[${{ github.sha }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})\", \"inline\": false }
+                   ],
+                   \"footer\": { \"text\": \"GitHub Actions\" },
+                   \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
+                 }]
+               }" \
+               "$DISCORD_WEBHOOK"
