@@ -49,9 +49,9 @@ productionLazyImport(() => {
 
 /**
  * Swagger UI documentation endpoint
- * Serves interactive API documentation at /docs
+ * Serves interactive API documentation and static assets at /docs
  */
-app.get("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Mount todo routes under /todos path
 app.use("/todos", todoRouter);
