@@ -81,9 +81,9 @@ jobs:
                 git -C "$WORKDIR" checkout --detach "${{ github.sha }}"
 
                 case "${{ inputs.environment }}" in
-                  development) OVERLAY="k8s/overlays/development" ;;
-                  staging) OVERLAY="k8s/overlays/intergration" ;;
-                  production) OVERLAY="k8s/overlays/production" ;;
+                  development) OVERLAY="k8s/rollout/overlays/development" ;;
+                  staging) OVERLAY="k8s/rollout/overlays/intergration" ;;
+                  production) OVERLAY="k8s/rollout/overlays/production" ;;
                   *)
                     echo "Unknown environment: ${{ inputs.environment }}"
                     exit 1

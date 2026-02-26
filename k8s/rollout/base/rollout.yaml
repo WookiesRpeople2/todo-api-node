@@ -9,10 +9,12 @@ spec:
   selector:
     matchLabels:
       app: todo
+      app.kubernetes.io/name: todo
   template:
     metadata:
       labels:
         app: todo
+        app.kubernetes.io/name: todo
     spec:
       imagePullSecrets:
         - name: ghcr-secret
