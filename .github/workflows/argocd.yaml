@@ -29,6 +29,31 @@ jobs:
           password: ${{ secrets.SERVER_PASSWORD }}
           port: ${{ secrets.SERVER_PORT }}
           script: |
+            set -euo pipefail
+
+            # Ensure Argo Rollouts kubectl plugin exists on the remote host.
+            # `kubectl argo rollouts ...` maps to the binary `kubectl-argo-rollouts` in PATH.
+            if ! command -v kubectl-argo-rollouts >/dev/null 2>&1; then
+              echo "kubectl-argo-rollouts not found; installing to \$HOME/.local/bin ..."
+
+              VERSION="${ARGO_ROLLOUTS_VERSION:-v1.7.2}"
+              OS="$(uname | tr '[:upper:]' '[:lower:]')"
+              ARCH="$(uname -m)"
+              case "$ARCH" in
+                x86_64|amd64) ARCH="amd64" ;;
+                aarch64|arm64) ARCH="arm64" ;;
+              esac
+
+              URL="https://github.com/argoproj/argo-rollouts/releases/download/${VERSION}/kubectl-argo-rollouts-${OS}-${ARCH}"
+
+              mkdir -p "$HOME/.local/bin"
+              curl -fsSL "$URL" -o "$HOME/.local/bin/kubectl-argo-rollouts"
+              chmod +x "$HOME/.local/bin/kubectl-argo-rollouts"
+
+              export PATH="$HOME/.local/bin:$PATH"
+              echo "Installed kubectl-argo-rollouts (${VERSION})"
+            fi
+
             echo "${{ vars.TEMPLATE }}" | kubectl apply -f -
 
             if [ "${{ inputs.canary_weight }}" -lt 100 ]; then
@@ -54,5 +79,28 @@ jobs:
           password: ${{ secrets.SERVER_PASSWORD }}
           port: ${{ secrets.SERVER_PORT }}
           script: |
+            set -euo pipefail
+
+            if ! command -v kubectl-argo-rollouts >/dev/null 2>&1; then
+              echo "kubectl-argo-rollouts not found; installing to \$HOME/.local/bin ..."
+
+              VERSION="${ARGO_ROLLOUTS_VERSION:-v1.7.2}"
+              OS="$(uname | tr '[:upper:]' '[:lower:]')"
+              ARCH="$(uname -m)"
+              case "$ARCH" in
+                x86_64|amd64) ARCH="amd64" ;;
+                aarch64|arm64) ARCH="arm64" ;;
+              esac
+
+              URL="https://github.com/argoproj/argo-rollouts/releases/download/${VERSION}/kubectl-argo-rollouts-${OS}-${ARCH}"
+
+              mkdir -p "$HOME/.local/bin"
+              curl -fsSL "$URL" -o "$HOME/.local/bin/kubectl-argo-rollouts"
+              chmod +x "$HOME/.local/bin/kubectl-argo-rollouts"
+
+              export PATH="$HOME/.local/bin:$PATH"
+              echo "Installed kubectl-argo-rollouts (${VERSION})"
+            fi
+
             kubectl argo rollouts undo app -n ${{ vars.NAMESPACE }}
             echo "Rolled back ${{ inputs.environment }} to previous revision"
