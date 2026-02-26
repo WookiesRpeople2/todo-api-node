@@ -1,0 +1,45 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: todo
+  labels:
+    app: todo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: todo
+      app.kubernetes.io/name: todo
+  template:
+    metadata:
+      labels:
+        app: todo
+        app.kubernetes.io/name: todo
+    spec:
+      imagePullSecrets:
+        - name: ghcr-secret
+      containers:
+        - name: todo
+          image: ghcr.io/wookiesrpeople2/todo-api-node:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            - name: ENV
+              value: "base"
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "100m"
+              memory: "512Mi"
+  strategy:
+    canary:
+      stableService: todo-stable
+      canaryService: todo-canary
+      steps:
+        - setWeight: 20
+        - pause: { duration: 60s }
+        - setWeight: 100
+

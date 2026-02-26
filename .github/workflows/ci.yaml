@@ -92,6 +92,9 @@ jobs:
       - name: Lint
         run: npx eslint '**/*.js'
 
+      - name: Validate OpenAPI spec
+        run: npx @redocly/cli@latest lint swagger.json
+
   generate-shards:
     runs-on: ubuntu-latest
     outputs:
@@ -252,6 +255,7 @@ jobs:
 
   build-and-push:
     name: Build and Push Docker Image
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/intergration' || github.ref == 'refs/heads/development'
     needs: [lint, tests-complete, k6]
     runs-on: ubuntu-latest
     permissions:
@@ -281,7 +285,7 @@ jobs:
             type=ref,event=branch
             type=ref,event=tag
             type=sha
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest
 
       - name: Build and push Docker image
         id: build
@@ -301,6 +305,8 @@ jobs:
     uses: ./.github/workflows/argocd.yaml
     with:
       environment: development
+      use_rtemplate: false
+      image_tag: ${{ needs.build-and-push.outputs.image-digest }}
     secrets: inherit
 
   deploy-staging:
@@ -310,13 +316,123 @@ jobs:
     uses: ./.github/workflows/argocd.yaml
     with:
       environment: staging
+      use_rtemplate: false
+      image_tag: ${{ needs.build-and-push.outputs.image-digest }}
     secrets: inherit
 
-  deploy-production:
-    name: Deploy to Production
+  deploy-production-canary:
+    name: Deploy to Production (canary 20%)
     needs: build-and-push
     if: github.ref == 'refs/heads/main'
     uses: ./.github/workflows/argocd.yaml
     with:
       environment: production
+      use_rtemplate: true
+      canary_weight: 20
+      image_tag: ${{ needs.build-and-push.outputs.image-digest }}
     secrets: inherit
+
+  deploy-production:
+    name: Deploy to Production (Full)
+    needs: deploy-production-canary
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/argocd.yaml
+    with:
+      environment: production
+      use_rtemplate: false
+      canary_weight: 100
+      image_tag: ${{ needs.build-and-push.outputs.image-digest }}
+    secrets: inherit
+
+  # rollback:
+  #   name: Rollback on failure
+  #   runs-on: ubuntu-latest
+  #   needs: [deploy-development, deploy-staging, deploy-production-canary, deploy-production]
+  #   if: failure()
+  #   steps:
+  #     - name: Rollback triggered
+  #       run: echo "Rollback handled by argocd.yaml reusable workflow per environment"
+
+  sync-feature-flags:
+    name: Sync Feature Flags
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/intergration' || github.ref == 'refs/heads/development'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set environment name and Flagsmith key
+        id: config
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "env=production" >> $GITHUB_OUTPUT
+            echo "key=${{ secrets.FLAGSMITH_KEY_PRODUCTION }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" = "refs/heads/intergration" ]; then
+            echo "env=staging" >> $GITHUB_OUTPUT
+            echo "key=${{ secrets.FLAGSMITH_KEY_STAGING }}" >> $GITHUB_OUTPUT
+          else
+            echo "env=development" >> $GITHUB_OUTPUT
+            echo "key=${{ secrets.FLAGSMITH_KEY_DEVELOPMENT }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Sync flags to flagsmith
+        env:
+          FLAGSMITH_KEY: ${{ steps.config.outputs.key }}
+          ENVIRONMENT: ${{ steps.config.outputs.env }}
+        run: |
+          FLAGS=$(cat .github/feature-flags.json)
+
+          echo "$FLAGS" | jq -c '.[]' | while read -r flag; do
+            NAME=$(echo "$flag" | jq -r '.name')
+            ENABLED=$(echo "$flag" | jq -r --arg env "$ENVIRONMENT" '.[$env]')
+
+            echo "Setting $NAME to $ENABLED in $ENVIRONMENT..."
+
+            curl -sf -X POST "https://edge.api.flagsmith.com/api/v1/flags/" \
+              -H "X-Environment-Key: $FLAGSMITH_KEY" \
+              -H "Content-Type: application/json" \
+              -d "{\"feature_state_value\": null, \"enabled\": $ENABLED, \"feature\": {\"name\": \"$NAME\"}}"
+
+            echo "✅ $NAME = $ENABLED"
+          done
+
+  notify-discord:
+    name: Notify Discord
+    runs-on: ubuntu-latest
+    needs: [deploy-development, deploy-staging, deploy-production-canary, deploy-production]
+    if: |
+      always() && (
+        needs.deploy-development.result != 'skipped' ||
+        needs.deploy-staging.result != 'skipped' ||
+        needs.deploy-production-canary.result != 'skipped' ||
+        needs.deploy-production.result != 'skipped'
+      )
+    steps:
+      - name: Notify Discord
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          STATUS="${{ job.status }}"
+          COLOR=3066993   # green
+          EMOJI="✅"
+
+          if [ "$STATUS" != "success" ]; then
+            COLOR=15158332  # red
+            EMOJI="❌"
+          fi
+
+          curl -H "Content-Type: application/json" \
+               -X POST \
+               -d "{
+                 \"embeds\": [{
+                   \"title\": \"$EMOJI ${{ github.repository }} — Build $STATUS\",
+                   \"color\": $COLOR,
+                   \"fields\": [
+                     { \"name\": \"Branch\", \"value\": \"${{ github.ref_name }}\", \"inline\": true },
+                     { \"name\": \"Triggered by\", \"value\": \"${{ github.actor }}\", \"inline\": true },
+                     { \"name\": \"Commit\", \"value\": \"[${{ github.sha }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})\", \"inline\": false }
+                   ],
+                   \"footer\": { \"text\": \"GitHub Actions\" },
+                   \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
+                 }]
+               }" \
+               "$DISCORD_WEBHOOK"

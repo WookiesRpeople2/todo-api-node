@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+namespace: intergration
+
+nameSuffix: -int
+
+patches:
+  - path: patches/deployment.yaml
+
+images:
+  - name: ghcr.io/wookiesrpeople2/todo-api-node:latest
+    newTag: intergration
+

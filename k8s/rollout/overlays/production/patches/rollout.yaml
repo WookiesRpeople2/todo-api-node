@@ -1,0 +1,17 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: todo
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+        - name: todo
+          image: ghcr.io/wookiesrpeople2/todo-api-node:latest
+          envFrom:
+            - configMapRef:
+                name: todo-config
+            - secretRef:
+                name: todo-secrets
+
