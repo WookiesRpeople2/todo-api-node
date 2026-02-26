@@ -3,11 +3,12 @@ kind: Rollout
 metadata:
   name: todo
 spec:
-  replicas: 1
+  replicas: 2
   template:
     spec:
       containers:
         - name: todo
+          image: ghcr.io/wookiesrpeople2/todo-api-node:latest
           envFrom:
             - configMapRef:
                 name: todo-config
