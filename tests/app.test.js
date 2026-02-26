@@ -255,5 +255,19 @@ describe('Feature flags (env-driven)', () => {
       .expect(404);
 
     expect(response.body.detail).toBe('Feature disabled');
+  test('Server should start and listen on specified port', async () => {
+    const { startServer } = require('../app');
+    
+    // Use a test port to avoid conflicts
+    const testPort = 9999;
+    const server = startServer(testPort);
+    
+    // Verify server is listening
+    expect(server.listening).toBe(true);
+    
+    // Clean up: close the server
+    await new Promise((resolve) => {
+      server.close(resolve);
+    });
   });
 });
