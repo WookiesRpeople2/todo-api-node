@@ -22,6 +22,20 @@ const productionLazyImport = (callback) => {
   }
 };
 
+const Flagsmith = require('flagsmith-nodejs');
+
+const flagsmith = new Flagsmith({
+  environmentKey: process.env.FLAGSMITH_KEY,
+});
+
+const flags = await flagsmith.getEnvironmentFlags();
+
+if (flags.isFeatureEnabled('new-checkout-flow')) {
+  app.get("/", (_req, res) => {
+    res.json({ message: "Welcome to the Enhanced Express Todo App!" });
+  });
+}
+
 // Parse incoming JSON request bodies
 app.use(express.json());
 
