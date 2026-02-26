@@ -15,7 +15,7 @@ const router = Router();
  * Catches errors in async route handlers and sends them to Sentry if configured
  */
 const asyncHandler = (fn) => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch((error) => {
+  return Promise.resolve(fn(req, res, next)).catch((error) => {
     logger.error({ error: error.message }, "Route handler error");
     if (process.env.SENTRY_DSN) {
       Sentry.captureException(error);
