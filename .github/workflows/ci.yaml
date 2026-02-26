@@ -312,11 +312,45 @@ jobs:
       environment: staging
     secrets: inherit
 
-  deploy-production:
-    name: Deploy to Production
+    deploy-development:
+    name: Deploy to Development
+    needs: build-and-push
+    if: github.ref == 'refs/heads/development'
+    uses: ./.github/workflows/argocd.yaml
+    with:
+      environment: development
+      image_tag: ${{ needs.build-and-push.outputs.image-digest }}
+    secrets: inherit
+
+  deploy-staging:
+    name: Deploy to Staging
+    needs: build-and-push
+    if: github.ref == 'refs/heads/intergration'
+    uses: ./.github/workflows/argocd.yaml
+    with:
+      environment: staging
+      image_tag: ${{ needs.build-and-push.outputs.image-digest }}
+    secrets: inherit
+
+
+  deploy-production-canary:
+    name: Deploy to Production (Canary 20%)
     needs: build-and-push
     if: github.ref == 'refs/heads/main'
     uses: ./.github/workflows/argocd.yaml
     with:
       environment: production
+      canary_weight: 20
+      image_tag: ${{ needs.build-and-push.outputs.image-digest }}
+    secrets: inherit
+
+  deploy-production:
+    name: Deploy to Production (Full)
+    needs: deploy-production-canary
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/argocd.yaml
+    with:
+      environment: production
+      canary_weight: 100
+      image_tag: ${{ needs.build-and-push.outputs.image-digest }}
     secrets: inherit

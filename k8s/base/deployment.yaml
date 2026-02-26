@@ -32,4 +32,12 @@ spec:
             limits:
               cpu: "100m"
               memory: "512Mi"
+    strategy:
+      canary:
+        canaryService: app-canary
+        stableService: app-stable
+        steps:
+          - setWeight: 20
+          - pause: { duration: 60s }
+          - setWeight: 100
 

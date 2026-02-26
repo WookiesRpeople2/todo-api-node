@@ -6,6 +6,14 @@ on:
       environment:
         required: true
         type: string
+      canary_weight:
+        required: false
+        type: number
+        default: 100
+      image_tag:
+        required: false
+        type: string
+        default: latest
 
 jobs:
   deploy:
@@ -22,3 +30,29 @@ jobs:
           port: ${{ secrets.SERVER_PORT }}
           script: |
             echo "${{ vars.TEMPLATE }}" | kubectl apply -f -
+
+            if [ "${{ inputs.canary_weight }}" -lt 100 ]; then
+              kubectl argo rollouts set image app \
+                app=${{ vars.REGISTRY }}/${{ vars.IMAGE_NAME }}:${{ inputs.image_tag }} \
+                -n ${{ vars.NAMESPACE }}
+            else
+              kubectl argo rollouts promote app -n ${{ vars.NAMESPACE }}
+            fi
+
+    rollback:
+      name: Rollback ${{ inputs.environment }}
+      runs-on: ubuntu-latest
+      needs: deploy
+      if: failure()
+      environment: ${{ inputs.environment }}
+      steps:
+        - name: Rollback to previous revision
+          uses: appleboy/ssh-action@v1.0.3
+          with:
+            host: ${{ secrets.SERVER_HOST }}
+            username: ${{ secrets.SERVER_USER }}
+            password: ${{ secrets.SERVER_PASSWORD }}
+            port: ${{ secrets.SERVER_PORT }}
+            script: |
+              kubectl argo rollouts undo app -n ${{ vars.NAMESPACE }}
+              echo "Rolled back ${{ inputs.environment }} to previous revision"
