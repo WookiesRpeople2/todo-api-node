@@ -112,10 +112,21 @@ module.exports = app;
 module.exports.startServer = startServer;
 
 /**
+ * Initialize and start the server if this module is the main entry point
+ * This function is exported for testing purposes
+ * @returns {http.Server|null} The server instance if started, null otherwise
+ */
+const initializeServer = () => {
+  if (require.main === module) {
+    return startServer();
+  }
+  return null;
+};
+
+module.exports.initializeServer = initializeServer;
+
+/**
  * Start server only when run directly (not when imported for testing)
  * Supports custom PORT via environment variable, defaults to 3000
  */
-if (require.main === module) {
-  startServer();
-}
-
+initializeServer();
