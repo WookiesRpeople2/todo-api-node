@@ -10,7 +10,7 @@ patches:
   - path: patches/deployment.yaml
 
 images:
-  - name: ghcr.io/wookiesrpeople2/todo-api-node:development
+  - name: ghcr.io/wookiesrpeople2/todo-api-node:latest
     newTag: development
 
 
