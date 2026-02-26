@@ -6,6 +6,10 @@ on:
       environment:
         required: true
         type: string
+      use_rtemplate:
+        required: false
+        type: boolean
+        default: false
       canary_weight:
         required: false
         type: number
@@ -61,17 +65,17 @@ jobs:
             echo "Using rollout: ${ROLLOUT_NAME} (container: ${ROLLOUT_CONTAINER})"
             echo "Using image: ${FULL_IMAGE}"
 
-            # Apply both manifests (if provided), otherwise fall back to overlay.
-            # - vars.TEMPLATE: typically Argo CD Application
-            # - vars.RTEMPLATE: optionally extra resources (e.g., Rollout/Services) or another Application
+            # Apply selected manifest(s), otherwise fall back to overlay.
+            # - vars.TEMPLATE: normal Argo CD Application
+            # - vars.RTEMPLATE: separate canary Application (used only when requested)
             if [ -n "$TEMPLATE" ]; then
               echo "$TEMPLATE" | kubectl apply -f -
             fi
-            if [ -n "$RTEMPLATE" ]; then
+            if [ "${{ inputs.use_rtemplate }}" = "true" ] && [ -n "$RTEMPLATE" ]; then
               echo "$RTEMPLATE" | kubectl apply -f -
             fi
 
-            if [ -z "$TEMPLATE" ] && [ -z "$RTEMPLATE" ]; then
+            if [ -z "$TEMPLATE" ] && { [ "${{ inputs.use_rtemplate }}" != "true" ] || [ -z "$RTEMPLATE" ]; }; then
               if (
                 WORKDIR="$(mktemp -d)"
                 trap 'rm -rf "$WORKDIR"' EXIT
