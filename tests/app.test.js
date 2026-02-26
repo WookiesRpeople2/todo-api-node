@@ -456,6 +456,78 @@ describe('Feature flags (env-driven)', () => {
   });
 });
 
+describe('Sentry integration (env enabled)', () => {
+  const ORIGINAL_ENV = process.env;
+
+  const mockSentry = () => ({
+    init: jest.fn(),
+    setTag: jest.fn(),
+    setContext: jest.fn(),
+    captureMessage: jest.fn(),
+    Handlers: {
+      requestHandler: () => (req, _res, next) => next(),
+      errorHandler: () => (err, _req, _res, next) => next(err),
+    },
+    Integrations: {
+      Http: function Http() {},
+      Express: function Express() {},
+    },
+  });
+
+  afterEach(() => {
+    process.env = ORIGINAL_ENV;
+    jest.resetModules();
+    jest.clearAllMocks();
+  });
+
+  test('initializes Sentry and adds request context tags', async () => {
+    process.env = {
+      ...ORIGINAL_ENV,
+      SENTRY_DSN: 'https://example@o0.ingest.sentry.io/1',
+      NODE_ENV: 'test',
+    };
+
+    jest.resetModules();
+    jest.doMock('@sentry/node', () => mockSentry());
+
+    const freshApp = require('../app');
+    const Sentry = require('@sentry/node');
+
+    await request(freshApp)
+      .get('/health')
+      .expect(200);
+
+    expect(Sentry.init).toHaveBeenCalled();
+    expect(Sentry.setTag).toHaveBeenCalledWith('http.method', 'GET');
+    expect(Sentry.setTag).toHaveBeenCalledWith('http.url', '/health');
+    expect(Sentry.setContext).toHaveBeenCalledWith(
+      'request',
+      expect.objectContaining({ method: 'GET', url: '/health' })
+    );
+  });
+
+  test('captures message from /test-error endpoint', async () => {
+    process.env = {
+      ...ORIGINAL_ENV,
+      SENTRY_DSN: 'https://example@o0.ingest.sentry.io/1',
+      NODE_ENV: 'test',
+    };
+
+    jest.resetModules();
+    jest.doMock('@sentry/node', () => mockSentry());
+
+    const freshApp = require('../app');
+    const Sentry = require('@sentry/node');
+
+    const response = await request(freshApp)
+      .get('/test-error?message=hello-sentry')
+      .expect(400);
+
+    expect(response.body.sentryEnabled).toBe(true);
+    expect(Sentry.captureMessage).toHaveBeenCalledWith('hello-sentry', 'warning');
+  });
+});
+
   test('Server should start and listen on specified port', async () => {
     const { startServer } = require('../app');
     const logger = require('../logger.js');

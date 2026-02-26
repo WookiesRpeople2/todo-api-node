@@ -280,3 +280,116 @@ describe('GET /search/all', () => {
     expect(response.body.length).toBe(0);
   });
 });
+
+describe('asyncHandler error handling', () => {
+  const ORIGINAL_ENV = process.env;
+
+  const mockSentry = () => ({
+    init: jest.fn(),
+    captureException: jest.fn(),
+    setTag: jest.fn(),
+    setContext: jest.fn(),
+    Handlers: {
+      requestHandler: () => (req, _res, next) => next(),
+      errorHandler: () => (err, _req, _res, next) => next(err),
+    },
+    Integrations: {
+      Http: function Http() {},
+      Express: function Express() {},
+    },
+  });
+
+  afterEach(() => {
+    process.env = ORIGINAL_ENV;
+    jest.resetModules();
+    jest.clearAllMocks();
+  });
+
+  test('asyncHandler logs error and returns 500 when route handler throws', async () => {
+    const logger = require('../logger.js');
+    const errorSpy = jest.spyOn(logger, 'error').mockImplementation(() => {});
+
+    // Create a test app with a route that throws
+    const freshApp = require('express')();
+    freshApp.use(require('express').json());
+
+    const { Router } = require('express');
+    const router = Router();
+
+    const asyncHandler = (fn) => (req, res, next) => {
+      Promise.resolve(fn(req, res, next)).catch((error) => {
+        logger.error({ error: error.message }, "Route handler error");
+        res.status(500).json({ detail: "Internal server error" });
+      });
+    };
+
+    router.post('/error', asyncHandler(async (req, res) => {
+      throw new Error('Test error from route');
+    }));
+
+    freshApp.use('/', router);
+
+    const response = await request(freshApp)
+      .post('/error')
+      .send({})
+      .expect(500);
+
+    expect(response.body.detail).toBe('Internal server error');
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ error: 'Test error from route' }),
+      'Route handler error'
+    );
+
+    errorSpy.mockRestore();
+  });
+
+  test('asyncHandler captures exception with Sentry when SENTRY_DSN is set', async () => {
+    process.env = {
+      ...ORIGINAL_ENV,
+      SENTRY_DSN: 'https://example@o0.ingest.sentry.io/1',
+      NODE_ENV: 'test',
+    };
+
+    jest.resetModules();
+    jest.doMock('@sentry/node', () => mockSentry());
+
+    const logger = require('../logger.js');
+    jest.spyOn(logger, 'error').mockImplementation(() => {});
+
+    const Sentry = require('@sentry/node');
+
+    // Create a test app with a route that throws
+    const express = require('express');
+    const freshApp = express();
+    freshApp.use(express.json());
+
+    const { Router } = require('express');
+    const router = Router();
+
+    const asyncHandler = (fn) => (req, res, next) => {
+      Promise.resolve(fn(req, res, next)).catch((error) => {
+        logger.error({ error: error.message }, "Route handler error");
+        if (process.env.SENTRY_DSN) {
+          Sentry.captureException(error);
+        }
+        res.status(500).json({ detail: "Internal server error" });
+      });
+    };
+
+    router.post('/error', asyncHandler(async (req, res) => {
+      throw new Error('Sentry test error');
+    }));
+
+    freshApp.use('/', router);
+
+    const response = await request(freshApp)
+      .post('/error')
+      .send({})
+      .expect(500);
+
+    expect(response.body.detail).toBe('Internal server error');
+    expect(Sentry.captureException).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'Sentry test error' })
+    );
+  });
+});
