@@ -346,37 +346,24 @@ describe('Feature flags (env-driven)', () => {
     const { initializeServer } = require('../app');
     
     // When app.js is imported (not run directly), initializeServer returns null
-    const result = initializeServer();
+    const result = initializeServer(false);
     expect(result).toBeNull();
   });
 
-  test('initializeServer should call and return startServer result when module is main', async () => {
-    // To test the "return startServer()" line inside initializeServer,
-    // we need to verify that when called as main module, it returns the server.
-    // We use a workaround: test that startServer returns the right value
-    // when called (which is what initializeServer does in that branch)
-    
+  test('initializeServer should return server instance when forced as main', async () => {
     const logger = require('../logger.js');
     const loggerSpy = jest.spyOn(logger, 'info').mockImplementation(() => {});
     
-    const { startServer } = require('../app');
+    const { initializeServer } = require('../app');
     
-    // When initializeServer's branch executes, it calls startServer()
-    // and returns its result. Let's verify that startServer returns a server.
-    const testPort = 9995;
-    const server = startServer(testPort);
+    // Force the main-module path to cover `return startServer()`
+    const server = initializeServer(true);
     
-    // This server instance would be returned by initializeServer
     expect(server).toBeDefined();
     expect(server).not.toBeNull();
     expect(server.listening).toBe(true);
     expect(typeof server.close).toBe('function');
     
-    // Verify the return value is a proper server instance
-    const returnedValue = server;
-    expect(returnedValue).toBeDefined();
-    
-    // Clean up
     loggerSpy.mockRestore();
     await new Promise((resolve) => { server.close(resolve); });
   });
@@ -389,7 +376,7 @@ describe('Feature flags (env-driven)', () => {
     expect(typeof appModule.initializeServer).toBe('function');
     
     // Call it (will return null when imported, not run as main)
-    const result = appModule.initializeServer();
+    const result = appModule.initializeServer(false);
     
     // In test context, require.main !== module, so returns null
     expect(result).toBeNull();

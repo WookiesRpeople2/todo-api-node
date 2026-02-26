@@ -114,10 +114,11 @@ module.exports.startServer = startServer;
 /**
  * Initialize and start the server if this module is the main entry point
  * This function is exported for testing purposes
+ * @param {boolean} isMain - Override main-module detection for tests
  * @returns {http.Server|null} The server instance if started, null otherwise
  */
-const initializeServer = () => {
-  if (require.main === module) {
+const initializeServer = (isMain = require.main === module) => {
+  if (isMain) {
     return startServer();
   }
   return null;
