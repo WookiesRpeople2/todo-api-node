@@ -309,34 +309,17 @@ describe('asyncHandler error handling', () => {
     const logger = require('../logger.js');
     const errorSpy = jest.spyOn(logger, 'error').mockImplementation(() => {});
 
-    // Create a test app with a route that throws
-    const freshApp = require('express')();
-    freshApp.use(require('express').json());
+    // Mock getDb to throw an error - this tests the real asyncHandler from routes/todo.js
+    const dbModule = require('../database/database');
+    jest.spyOn(dbModule, 'getDb').mockRejectedValueOnce(new Error('Database connection failed'));
 
-    const { Router } = require('express');
-    const router = Router();
-
-    const asyncHandler = (fn) => (req, res, next) => {
-      Promise.resolve(fn(req, res, next)).catch((error) => {
-        logger.error({ error: error.message }, "Route handler error");
-        res.status(500).json({ detail: "Internal server error" });
-      });
-    };
-
-    router.post('/error', asyncHandler(async (req, res) => {
-      throw new Error('Test error from route');
-    }));
-
-    freshApp.use('/', router);
-
-    const response = await request(freshApp)
-      .post('/error')
-      .send({})
+    const response = await request(app)
+      .get('/todos')
       .expect(500);
 
     expect(response.body.detail).toBe('Internal server error');
     expect(errorSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ error: 'Test error from route' }),
+      expect.objectContaining({ error: 'Database connection failed' }),
       'Route handler error'
     );
 
@@ -358,33 +341,15 @@ describe('asyncHandler error handling', () => {
 
     const Sentry = require('@sentry/node');
 
-    // Create a test app with a route that throws
-    const express = require('express');
-    const freshApp = express();
-    freshApp.use(express.json());
+    // Mock getDb to throw an error - this tests the real asyncHandler with SENTRY_DSN set
+    const dbModule = require('../database/database');
+    jest.spyOn(dbModule, 'getDb').mockRejectedValueOnce(new Error('Sentry test error'));
 
-    const { Router } = require('express');
-    const router = Router();
-
-    const asyncHandler = (fn) => (req, res, next) => {
-      Promise.resolve(fn(req, res, next)).catch((error) => {
-        logger.error({ error: error.message }, "Route handler error");
-        if (process.env.SENTRY_DSN) {
-          Sentry.captureException(error);
-        }
-        res.status(500).json({ detail: "Internal server error" });
-      });
-    };
-
-    router.post('/error', asyncHandler(async (req, res) => {
-      throw new Error('Sentry test error');
-    }));
-
-    freshApp.use('/', router);
+    const freshApp = require('../app');
 
     const response = await request(freshApp)
-      .post('/error')
-      .send({})
+      .post('/todos')
+      .send({ title: 'Test' })
       .expect(500);
 
     expect(response.body.detail).toBe('Internal server error');
