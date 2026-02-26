@@ -305,6 +305,7 @@ jobs:
     uses: ./.github/workflows/argocd.yaml
     with:
       environment: development
+      use_rtemplate: false
       image_tag: ${{ needs.build-and-push.outputs.image-digest }}
     secrets: inherit
 
@@ -315,6 +316,7 @@ jobs:
     uses: ./.github/workflows/argocd.yaml
     with:
       environment: staging
+      use_rtemplate: false
       image_tag: ${{ needs.build-and-push.outputs.image-digest }}
     secrets: inherit
 
@@ -325,6 +327,7 @@ jobs:
     uses: ./.github/workflows/argocd.yaml
     with:
       environment: production
+      use_rtemplate: true
       canary_weight: 20
       image_tag: ${{ needs.build-and-push.outputs.image-digest }}
     secrets: inherit
@@ -336,6 +339,7 @@ jobs:
     uses: ./.github/workflows/argocd.yaml
     with:
       environment: production
+      use_rtemplate: false
       canary_weight: 100
       image_tag: ${{ needs.build-and-push.outputs.image-digest }}
     secrets: inherit
