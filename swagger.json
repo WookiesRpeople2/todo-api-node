@@ -1,6 +1,10 @@
 {
   "openapi": "3.0.0",
   "info": {
+    "liencense": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    },
     "title": "Todo API",
     "description": "Simple Express API for managing todos with a file-backed SQLite database",
     "version": "1.0.0",
@@ -10,10 +14,11 @@
   },
   "servers": [
     {
-      "url": "http://localhost:3000",
+      "url": "https://sqlinjection.wookiesrpeople2.dev",
       "description": "Development server"
     }
   ],
+  "security": [],
   "tags": [
     {
       "name": "Health",
@@ -46,6 +51,22 @@
                     "message": {
                       "type": "string",
                       "example": "Welcome to the Enhanced Express Todo App!"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "detail": {
+                      "type": "string",
+                      "example": "Bad request"
                     }
                   }
                 }
@@ -155,6 +176,22 @@
                   "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/Todo"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "detail": {
+                      "type": "string",
+                      "example": "Invalid pagination parameters"
+                    }
                   }
                 }
               }
@@ -355,6 +392,22 @@
                   "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/Todo"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "detail": {
+                      "type": "string",
+                      "example": "Invalid search query"
+                    }
                   }
                 }
               }
