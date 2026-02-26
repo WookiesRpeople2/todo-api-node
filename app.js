@@ -6,6 +6,7 @@ const express = require("express");
 const swaggerUi = require("swagger-ui-express");
 const swaggerDocument = require("./swagger.json");
 const todoRouter = require("./routes/todo");
+const logger = require("./logger");
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use(express.json());
  * Returns a welcome message to verify API is running
  */
 app.get("/", (_req, res) => {
+  logger.info({ path: "/" }, "Welcome endpoint accessed");
   res.json({ message: "Welcome to the Enhanced Express Todo App!" });
 });
 
@@ -38,6 +40,7 @@ app.get("/", (_req, res) => {
  * Returns API health status and metadata
  */
 app.get("/health", (_req, res) => {
+  logger.debug({ path: "/health" }, "Health check endpoint accessed");
   res.json({
     status: "UP",
     timestamp: new Date().toISOString(),
@@ -78,5 +81,7 @@ module.exports = app;
  */
 if (require.main === module) {
   const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+  app.listen(PORT, () => {
+    logger.info({ port: PORT, pid: process.pid }, "Server started and listening");
+  });
 }

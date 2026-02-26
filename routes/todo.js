@@ -4,6 +4,7 @@
  */
 const { Router } = require("express");
 const { getDb, saveDb } = require("../database/database");
+const logger = require("../logger");
 
 // Router for /todos endpoints
 const router = Router();
@@ -18,6 +19,7 @@ router.post("/", async (req, res) => {
   
   // Validate required field
   if (!title) {
+    logger.warn({ body: req.body }, "POST /todos - title is required");
     return res.status(422).json({ detail: "title is required" });
   }
   
@@ -31,6 +33,7 @@ router.post("/", async (req, res) => {
   saveDb();
   
   const todo = toObj(row);
+  logger.info({ id, title, status }, "POST /todos - Todo created successfully");
   res.status(201).json(formatTodo(todo));
 });
 
@@ -44,6 +47,7 @@ router.get("/", async (req, res) => {
   const skip = parseInt(req.query.skip) || 0;
   const limit = parseInt(req.query.limit) || 10;
   
+  logger.debug({ skip, limit }, "GET /todos - Fetching todos");
   const db = await getDb();
   const rows = db.exec("SELECT * FROM todos LIMIT ? OFFSET ?", [limit, skip]);
   const todos = toArray(rows);
@@ -60,9 +64,11 @@ router.get("/:id", async (req, res) => {
   
   // Check if todo exists
   if (!rows.length || !rows[0].values.length) {
+    logger.debug({ id: req.params.id }, "GET /todos/:id - Todo not found");
     return res.status(404).json({ detail: "Todo not found" });
   }
   
+  logger.debug({ id: req.params.id }, "GET /todos/:id - Todo retrieved");
   res.json(formatTodo(toObj(rows)));
 });
 
@@ -77,6 +83,7 @@ router.put("/:id", async (req, res) => {
   const existing = db.exec("SELECT * FROM todos WHERE id = ?", [req.params.id]);
   
   if (!existing.length || !existing[0].values.length) {
+    logger.debug({ id: req.params.id }, "PUT /todos/:id - Todo not found");
     return res.status(404).json({ detail: "Todo not found" });
   }
 
@@ -91,6 +98,7 @@ router.put("/:id", async (req, res) => {
   const rows = db.exec("SELECT * FROM todos WHERE id = ?", [req.params.id]);
   saveDb();
   
+  logger.info({ id: req.params.id, title, status }, "PUT /todos/:id - Todo updated successfully");
   res.json(formatTodo(toObj(rows)));
 });
 
@@ -103,11 +111,13 @@ router.delete("/:id", async (req, res) => {
   const existing = db.exec("SELECT * FROM todos WHERE id = ?", [req.params.id]);
   
   if (!existing.length || !existing[0].values.length) {
+    logger.debug({ id: req.params.id }, "DELETE /todos/:id - Todo not found");
     return res.status(404).json({ detail: "Todo not found" });
   }
   
   db.run("DELETE FROM todos WHERE id = ?", [req.params.id]);
   saveDb();
+  logger.info({ id: req.params.id }, "DELETE /todos/:id - Todo deleted successfully");
   res.json({ detail: "Todo deleted" });
 });
 
