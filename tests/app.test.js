@@ -1,8 +1,8 @@
+
 const request = require('supertest');
 const app = require('../app');
 const { getDb, saveDb } = require('../database/database');
 const { spawn } = require('child_process');
-
 describe('Express App', () => {
   beforeEach(async () => {
     const db = await getDb();
@@ -18,6 +18,39 @@ describe('Express App', () => {
 
     expect(response.body.message).toBe('Welcome to the Enhanced Express Todo App!');
   });
+
+    test('GET / endpoint logs access with logger.info', async () => {
+      const logger = require('../logger.js');
+      const loggerSpy = jest.spyOn(logger, 'info');
+    
+      const response = await request(app)
+        .get('/')
+        .expect(200);
+    
+      // Verify logger.info was called with correct path context
+      expect(loggerSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ path: '/' }),
+        'Welcome endpoint accessed'
+      );
+    
+      expect(response.body.message).toBe('Welcome to the Enhanced Express Todo App!');
+      loggerSpy.mockRestore();
+    });
+
+    test('GET /health endpoint logs debug info', async () => {
+      const logger = require('../logger.js');
+      const debugSpy = jest.spyOn(logger, 'debug');
+    
+      const response = await request(app)
+        .get('/health')
+        .expect(200);
+    
+      // Verify logger.debug was called
+      expect(debugSpy).toHaveBeenCalled();
+    
+      expect(response.body.status).toBe('UP');
+      debugSpy.mockRestore();
+    });
 
   test('GET /health should return health status with all fields', async () => {
     const response = await request(app)
@@ -361,6 +394,7 @@ describe('Feature flags (env-driven)', () => {
     // In test context, require.main !== module, so returns null
     expect(result).toBeNull();
   });
+
 
   test('app.js should initialize and start server when run as main module', (done) => {
     const testPort = 9996;
