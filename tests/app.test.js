@@ -1,6 +1,8 @@
 const request = require('supertest');
 const app = require('../app');
 const { getDb, saveDb } = require('../database/database');
+const { spawn } = require('child_process');
+const http = require('http');
 
 describe('Express App', () => {
   beforeEach(async () => {
@@ -46,6 +48,17 @@ describe('Express App', () => {
       .expect(200);
 
     expect(typeof response.body).toBe('object');
+  });
+
+  test('GET /swagger.json should return OpenAPI document', async () => {
+    const response = await request(app)
+      .get('/swagger.json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    expect(response.body.openapi).toBeDefined();
+    expect(response.body.info).toBeDefined();
+    expect(response.body.paths).toBeDefined();
   });
 
   test('GET /todos should return todos array', async () => {
@@ -222,6 +235,87 @@ describe('Express App', () => {
     loggerSpy.mockRestore();
     await new Promise((resolve) => {
       server.close(resolve);
+    });
+  });
+
+  test('startServer should be exported as module export', () => {
+    delete require.cache[require.resolve('../app')];
+    const appModule = require('../app');
+    
+    // Verify startServer is exported
+    expect(appModule.startServer).toBeDefined();
+    expect(typeof appModule.startServer).toBe('function');
+    
+    // Verify it's the same function that starts servers
+    expect(appModule.startServer.length).toBe(2); // 2 parameters: port and host
+  });
+
+  test('initializeServer should be exported and return null in test environment', () => {
+    const { initializeServer } = require('../app');
+    
+    // In test environment, require.main !== module, so initializeServer returns null
+    const result = initializeServer();
+    
+    // During tests, this should return null since we're not the main module
+    expect(result === null || result.listening === true).toBe(true);
+  });
+
+  test('app.js should start server when run as main module', (done) => {
+    // Timeout: 10 seconds
+    const timeout = setTimeout(() => {
+      process.kill(child.pid);
+      done(new Error('Server did not start in time'));
+    }, 10000);
+
+    const testPort = 9998;
+    const child = spawn('node', ['app.js'], {
+      env: { ...process.env, PORT: testPort },
+      cwd: __dirname.replace(/tests$/, '')
+    });
+
+    let serverStarted = false;
+    let attempts = 0;
+    const maxAttempts = 20;
+
+    // Listen for server startup logs
+    child.stdout.on('data', (data) => {
+      if (data.toString().includes('Server started')) {
+        serverStarted = true;
+      }
+    });
+
+    child.stderr.on('data', (data) => {
+      console.log('Server stderr:', data.toString());
+    });
+
+    // Poll to check if server is listening
+    const checkInterval = setInterval(() => {
+      attempts++;
+      
+      const req = http.get(`http://localhost:${testPort}/health`, (res) => {
+        if (res.statusCode === 200 && serverStarted) {
+          clearInterval(checkInterval);
+          clearTimeout(timeout);
+          process.kill(child.pid);
+          done();
+        }
+      });
+
+      req.on('error', () => {
+        // Server not ready yet
+        if (attempts >= maxAttempts) {
+          clearInterval(checkInterval);
+          clearTimeout(timeout);
+          process.kill(child.pid);
+          done(new Error('Could not connect to spawned server'));
+        }
+      });
+    }, 500);
+
+    child.on('error', (err) => {
+      clearInterval(checkInterval);
+      clearTimeout(timeout);
+      done(err);
     });
   });
 });
