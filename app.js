@@ -10,7 +10,6 @@ const todoRouter = require("./routes/todo");
 const logger = require("./logger.js");
 
 const { createFeatureFlags } = require("./featureFlags");
-const logger = require("./logger.js");
 
 const app = express();
 
