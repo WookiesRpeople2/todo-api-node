@@ -370,6 +370,8 @@ describe('Express App', () => {
         console.log(`[subprocess stderr] ${data}`);
       }
     });
+  });
+
   test('GET /feat should be disabled by default', async () => {
     const response = await request(app)
       .get('/feat')
@@ -431,4 +433,4 @@ describe('Feature flags (env-driven)', () => {
 
     expect(response.body.detail).toBe('Feature disabled');
   });
-})});
+});
