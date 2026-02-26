@@ -5,6 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18-green)](https://nodejs.org/)
 [![Docker Image](https://img.shields.io/badge/docker-ready-blue)](https://www.docker.com/)
+[![Sentry](https://img.shields.io/badge/monitoring-Sentry-362d59?logo=sentry)](https://sentry.io)
 
 Simple Express API for managing todos with a file-backed SQLite database (sql.js).
 
@@ -18,6 +19,8 @@ Simple Express API for managing todos with a file-backed SQLite database (sql.js
 - ✅ Docker support
 - ✅ Comprehensive test coverage
 - ✅ GitHub Actions CI/CD
+- ✅ Error monitoring with Sentry
+- ✅ Structured logging with Pino
 
 ## Prerequisites
 
@@ -49,6 +52,8 @@ PORT=8080 npm start
 **Environment Variables:**
 
 - `PORT`: Server port (default: 3000)
+- `SENTRY_DSN`: Sentry Data Source Name for error tracking (optional)
+- `NODE_ENV`: Environment name - `development`, `production`, etc. (default: development)
 
 ## Testing
 
@@ -297,6 +302,48 @@ Search todos by title using a LIKE query.
   }
 ]
 ```
+
+## Monitoring & Error Tracking
+
+This project uses **[Sentry](https://sentry.io)** for real-time error tracking and performance monitoring.
+
+### Setup Sentry
+
+1. **Create a Sentry account** at [sentry.io](https://sentry.io) (free tier available)
+
+2. **Create a new project** in Sentry dashboard:
+   - Select "Node.js" as the platform
+   - Copy your project's DSN (Data Source Name)
+
+3. **Set the environment variable:**
+
+   ```bash
+   # Linux/macOS
+   export SENTRY_DSN="https://your-key@your-org.ingest.sentry.io/your-project-id"
+   npm start
+   
+   # Windows PowerShell
+   $env:SENTRY_DSN="https://your-key@your-org.ingest.sentry.io/your-project-id"
+   npm start
+   
+   # Windows CMD
+   set SENTRY_DSN=https://your-key@your-org.ingest.sentry.io/your-project-id
+   npm start
+   ```
+
+4. **For production deployment**, set `SENTRY_DSN` in your hosting environment (Docker, Kubernetes, cloud platform)
+
+### What Sentry Monitors
+
+- ❌ **Unhandled exceptions** and promise rejections
+- 🐛 **Error stack traces** with source maps
+- 📊 **Performance metrics** and transaction tracing
+- 🌍 **Request context** (HTTP method, URL, user agent)
+- 📍 **Environment tagging** (development, production, staging)
+
+### Running Without Sentry
+
+The application works perfectly fine without Sentry. If `SENTRY_DSN` is not set, Sentry will be disabled and errors will be logged normally with Pino.
 
 ## License
 
