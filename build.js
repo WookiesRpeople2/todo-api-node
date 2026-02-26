@@ -31,7 +31,11 @@ esbuild.build({
     "pino-pretty",
     "swagger-ui-express",
     "express",
-    "sql.js"
+    "sql.js",
+    "./logger.js",
+    "../logger.js",
+    "./database/database.js",
+    "../database/database.js"
   ],
   define: {
     "process.env.NODE_ENV": '"production"'
