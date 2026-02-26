@@ -21,7 +21,7 @@ spec:
           image: ghcr.io/wookiesrpeople2/todo-api-node:latest
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 3000
+            - containerPort: 80
           env:
             - name: ENV
               value: "base"
