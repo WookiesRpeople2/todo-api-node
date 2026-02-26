@@ -46,6 +46,17 @@ app.get("/feat", (_req, res) => {
   return res.json({ message: "Feature-Flag" });
 });
 
+/* Health endpoint
+ * Returns API health status and metadata
+ */
+app.get("/health", (_req, res) => {
+  res.json({
+    status: "UP",
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || "development",
+    uptime: process.uptime(),
+  });
+
 /**
  * Debug endpoint - only available in development/test environments
  * Exposes environment variables for debugging purposes
@@ -62,9 +73,9 @@ productionLazyImport(() => {
 
 /**
  * Swagger UI documentation endpoint
- * Serves interactive API documentation at /docs
+ * Serves interactive API documentation and static assets at /docs
  */
-app.get("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.use("/docs", swaggerUi.serveFiles(swaggerDocument), swaggerUi.setup(swaggerDocument));
 
 // Mount todo routes under /todos path
 app.use("/todos", todoRouter);

@@ -92,6 +92,9 @@ jobs:
       - name: Lint
         run: npx eslint '**/*.js'
 
+      - name: Validate OpenAPI spec
+        run: npx @redocly/cli@latest lint swagger.json
+
   generate-shards:
     runs-on: ubuntu-latest
     outputs:

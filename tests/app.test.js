@@ -18,6 +18,27 @@ describe('Express App', () => {
     expect(response.body.message).toBe('Welcome to the Enhanced Express Todo App!');
   });
 
+  test('GET /health should return health status with all fields', async () => {
+    const response = await request(app)
+      .get('/health')
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    expect(response.body.status).toBe('UP');
+    expect(response.body.timestamp).toBeDefined();
+    expect(response.body.environment).toBeDefined();
+    expect(response.body.uptime).toBeGreaterThanOrEqual(0);
+  });
+
+  test('GET /health should include current NODE_ENV', async () => {
+    const response = await request(app)
+      .get('/health')
+      .expect(200);
+
+    const currentEnv = process.env.NODE_ENV || 'development';
+    expect(response.body.environment).toBe(currentEnv);
+  });
+
   test('GET /debug should return debug info object', async () => {
     const response = await request(app)
       .get('/debug')
