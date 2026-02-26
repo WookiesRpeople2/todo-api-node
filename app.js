@@ -7,7 +7,7 @@ const swaggerUi = require("swagger-ui-express");
 const swaggerDocument = require("./swagger.json");
 const todoRouter = require("./routes/todo");
 const { createFeatureFlags } = require("./featureFlags");
-const logger = require("./logger");
+const logger = require("./logger.js");
 
 const app = express();
 

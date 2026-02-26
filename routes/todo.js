@@ -4,7 +4,7 @@
  */
 const { Router } = require("express");
 const { getDb, saveDb } = require("../database/database");
-const logger = require("../logger");
+const logger = require("../logger.js");
 
 // Router for /todos endpoints
 const router = Router();
