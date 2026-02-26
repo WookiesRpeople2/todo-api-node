@@ -56,6 +56,7 @@ app.get("/health", (_req, res) => {
     environment: process.env.NODE_ENV || "development",
     uptime: process.uptime(),
   });
+})
 
 /**
  * Debug endpoint - only available in development/test environments
@@ -91,3 +92,4 @@ if (require.main === module) {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
 }
+
