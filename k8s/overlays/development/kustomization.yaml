@@ -4,6 +4,8 @@ kind: Kustomization
 resources:
   - ../../base
 
+namespace: development
+
 nameSuffix: -dev
 
 patches:

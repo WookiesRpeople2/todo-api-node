@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     steps:
-      - name: Apply ArgoCD template
+      - name: Apply kustomize overlay (or template)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -36,8 +36,9 @@ jobs:
             ROLLOUT_NAME="${{ vars.ROLLOUT_NAME }}"
             ROLLOUT_CONTAINER="${{ vars.ROLLOUT_CONTAINER }}"
             if [ -z "${ROLLOUT_CONTAINER}" ]; then
-              ROLLOUT_CONTAINER="app"
+              ROLLOUT_CONTAINER="todo"
             fi
+            TEMPLATE="${{ vars.TEMPLATE }}"
             IMAGE_NAME="${{ vars.IMAGE_NAME }}"
             if [ -z "$IMAGE_NAME" ]; then
               IMAGE_NAME="${{ github.repository }}"
@@ -56,7 +57,35 @@ jobs:
             echo "Using rollout: ${ROLLOUT_NAME} (container: ${ROLLOUT_CONTAINER})"
             echo "Using image: ${FULL_IMAGE}"
 
-            echo "${{ vars.TEMPLATE }}" | kubectl apply -f -
+            # Prefer applying the repo's kustomize overlay (so you don't have to paste YAML into GitHub vars).
+            # If that fails (e.g., git not installed on server), fall back to vars.TEMPLATE.
+            if (
+              WORKDIR="$(mktemp -d)"
+              trap 'rm -rf "$WORKDIR"' EXIT
+
+              git clone --depth 1 "https://github.com/${{ github.repository }}.git" "$WORKDIR"
+              git -C "$WORKDIR" fetch --depth 1 origin "${{ github.sha }}"
+              git -C "$WORKDIR" checkout --detach "${{ github.sha }}"
+
+              case "${{ inputs.environment }}" in
+                development) OVERLAY="k8s/overlays/development" ;;
+                staging) OVERLAY="k8s/overlays/intergration" ;;
+                production) OVERLAY="k8s/overlays/production" ;;
+                *)
+                  echo "Unknown environment: ${{ inputs.environment }}"
+                  exit 1
+                  ;;
+              esac
+
+              kubectl apply -k "$WORKDIR/$OVERLAY"
+            ); then
+              echo "Applied overlay for ${{ inputs.environment }}"
+            elif [ -n "$TEMPLATE" ]; then
+              echo "$TEMPLATE" | kubectl apply -f -
+            else
+              echo "Failed to apply overlay and vars.TEMPLATE is empty."
+              exit 1
+            fi
 
             kubectl argo rollouts set image "$ROLLOUT_NAME" \
               "${ROLLOUT_CONTAINER}=${FULL_IMAGE}" \

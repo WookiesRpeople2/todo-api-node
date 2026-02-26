@@ -4,6 +4,8 @@ kind: Kustomization
 resources:
   - ../../base
 
+namespace: production
+
 nameSuffix: -prod
 
 patches:

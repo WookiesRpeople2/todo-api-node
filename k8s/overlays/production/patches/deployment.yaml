@@ -8,6 +8,20 @@ spec:
     spec:
       containers:
         - name: todo
+          image: ghcr.io/wookiesrpeople2/todo-api-node:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            - name: ENV
+              value: "base"
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "100m"
+              memory: "512Mi"
           envFrom:
             - configMapRef:
                 name: todo-config
