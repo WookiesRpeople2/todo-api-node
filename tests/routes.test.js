@@ -306,6 +306,8 @@ describe('asyncHandler error handling', () => {
   });
 
   test('asyncHandler logs error and returns 500 when route handler throws', async () => {
+    jest.resetModules();
+
     const logger = require('../logger.js');
     const errorSpy = jest.spyOn(logger, 'error').mockImplementation(() => {});
 
@@ -313,9 +315,11 @@ describe('asyncHandler error handling', () => {
     const dbModule = require('../database/database');
     jest.spyOn(dbModule, 'getDb').mockRejectedValueOnce(new Error('Database connection failed'));
 
-    const response = await request(app)
+    const freshApp = require('../app');
+
+    const response = await request(freshApp)
       .get('/todos')
-      .expect(200);
+      .expect(500);
 
     expect(response.body.detail).toBe('Internal server error');
     expect(errorSpy).toHaveBeenCalledWith(
