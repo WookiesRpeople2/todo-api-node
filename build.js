@@ -7,7 +7,6 @@ esbuild.build({
   bundle: true,
   platform: "node",
   outfile: "dist/app.js",
-  external: ["express"],
   define: {
     "process.env.NODE_ENV": '"production"'
   }
