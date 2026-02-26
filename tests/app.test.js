@@ -431,4 +431,4 @@ describe('Feature flags (env-driven)', () => {
 
     expect(response.body.detail).toBe('Feature disabled');
   });
-});
+})});
