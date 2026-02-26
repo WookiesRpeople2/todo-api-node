@@ -453,6 +453,9 @@ describe('Feature flags (env-driven)', () => {
       .expect(404);
 
     expect(response.body.detail).toBe('Feature disabled');
+  });
+});
+
   test('Server should start and listen on specified port', async () => {
     const { startServer } = require('../app');
     const logger = require('../logger.js');
@@ -625,46 +628,4 @@ describe('Feature flags (env-driven)', () => {
     expect(typeof response.body.timestamp).toBe('string');
     expect(typeof response.body.uptime).toBe('number');
   });
-});
 
-describe('Feature flags (env-driven)', () => {
-  const ORIGINAL_ENV = process.env;
-
-  afterEach(() => {
-    process.env = ORIGINAL_ENV;
-    jest.resetModules();
-  });
-
-  test('GET /feat returns 200 when enabled via FEATURE_FLAGS', async () => {
-    process.env = { ...ORIGINAL_ENV };
-    process.env.FEATURE_FLAG_PROVIDER = 'env';
-    process.env.FEATURE_FLAGS = 'new-checkout-flow=true';
-
-    jest.resetModules();
-    const freshApp = require('../app');
-
-    const response = await request(freshApp)
-      .get('/feat')
-      .expect('Content-Type', /json/)
-      .expect(200);
-
-    expect(response.body.message).toBe('Feature-Flag');
-  });
-
-  test('FF_ env var overrides FEATURE_FLAGS blob', async () => {
-    process.env = { ...ORIGINAL_ENV };
-    process.env.FEATURE_FLAG_PROVIDER = 'env';
-    process.env.FEATURE_FLAGS = 'new-checkout-flow=true';
-    process.env.FF_NEW_CHECKOUT_FLOW = 'false';
-
-    jest.resetModules();
-    const freshApp = require('../app');
-
-    const response = await request(freshApp)
-      .get('/feat')
-      .expect('Content-Type', /json/)
-      .expect(404);
-
-    expect(response.body.detail).toBe('Feature disabled');
-  });
-})});
