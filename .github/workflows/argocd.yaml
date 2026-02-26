@@ -32,28 +32,10 @@ jobs:
             set -euo pipefail
 
             NAMESPACE="${{ vars.NAMESPACE }}"
-            if [ -z "$NAMESPACE" ]; then
-              NAMESPACE="${{ inputs.environment }}"
-            fi
-
             REGISTRY="${{ vars.REGISTRY }}"
-            if [ -z "$REGISTRY" ]; then
-              REGISTRY="ghcr.io"
-            fi
-
             IMAGE_NAME="${{ vars.IMAGE_NAME }}"
             if [ -z "$IMAGE_NAME" ]; then
               IMAGE_NAME="${{ github.repository }}"
-            fi
-
-            ROLLOUT_NAME="${{ vars.ROLLOUT_NAME }}"
-            if [ -z "$ROLLOUT_NAME" ]; then
-              ROLLOUT_NAME="todo"
-            fi
-
-            ROLLOUT_CONTAINER="${{ vars.ROLLOUT_CONTAINER }}"
-            if [ -z "$ROLLOUT_CONTAINER" ]; then
-              ROLLOUT_CONTAINER="todo"
             fi
 
             IMAGE_TAG="${{ inputs.image_tag }}"
@@ -68,29 +50,6 @@ jobs:
             echo "Using namespace: ${NAMESPACE}"
             echo "Using rollout: ${ROLLOUT_NAME} (container: ${ROLLOUT_CONTAINER})"
             echo "Using image: ${FULL_IMAGE}"
-
-            # Ensure Argo Rollouts kubectl plugin exists on the remote host.
-            # `kubectl argo rollouts ...` maps to the binary `kubectl-argo-rollouts` in PATH.
-            if ! command -v kubectl-argo-rollouts >/dev/null 2>&1; then
-              echo "kubectl-argo-rollouts not found; installing to \$HOME/.local/bin ..."
-
-              VERSION="${ARGO_ROLLOUTS_VERSION:-v1.7.2}"
-              OS="$(uname | tr '[:upper:]' '[:lower:]')"
-              ARCH="$(uname -m)"
-              case "$ARCH" in
-                x86_64|amd64) ARCH="amd64" ;;
-                aarch64|arm64) ARCH="arm64" ;;
-              esac
-
-              URL="https://github.com/argoproj/argo-rollouts/releases/download/${VERSION}/kubectl-argo-rollouts-${OS}-${ARCH}"
-
-              mkdir -p "$HOME/.local/bin"
-              curl -fsSL "$URL" -o "$HOME/.local/bin/kubectl-argo-rollouts"
-              chmod +x "$HOME/.local/bin/kubectl-argo-rollouts"
-
-              export PATH="$HOME/.local/bin:$PATH"
-              echo "Installed kubectl-argo-rollouts (${VERSION})"
-            fi
 
             echo "${{ vars.TEMPLATE }}" | kubectl apply -f -
 
@@ -120,41 +79,6 @@ jobs:
             set -euo pipefail
 
             NAMESPACE="${{ vars.NAMESPACE }}"
-            if [ -z "$NAMESPACE" ]; then
-              NAMESPACE="${{ inputs.environment }}"
-            fi
-
             ROLLOUT_NAME="${{ vars.ROLLOUT_NAME }}"
-            if [ -z "$ROLLOUT_NAME" ]; then
-              ROLLOUT_NAME="app"
-            fi
-
-            if ! command -v kubectl-argo-rollouts >/dev/null 2>&1; then
-              echo "kubectl-argo-rollouts not found; installing to \$HOME/.local/bin ..."
-
-              VERSION="${ARGO_ROLLOUTS_VERSION:-v1.7.2}"
-              OS="$(uname | tr '[:upper:]' '[:lower:]')"
-              ARCH="$(uname -m)"
-              case "$ARCH" in
-                x86_64|amd64) ARCH="amd64" ;;
-                aarch64|arm64) ARCH="arm64" ;;
-              esac
-
-              URL="https://github.com/argoproj/argo-rollouts/releases/download/${VERSION}/kubectl-argo-rollouts-${OS}-${ARCH}"
-
-              mkdir -p "$HOME/.local/bin"
-              curl -fsSL "$URL" -o "$HOME/.local/bin/kubectl-argo-rollouts"
-              chmod +x "$HOME/.local/bin/kubectl-argo-rollouts"
-
-              export PATH="$HOME/.local/bin:$PATH"
-              echo "Installed kubectl-argo-rollouts (${VERSION})"
-            fi
-
-            if ! kubectl get crd rollouts.argoproj.io >/dev/null 2>&1; then
-              echo "Argo Rollouts CRD (rollouts.argoproj.io) not found in the cluster."
-              echo "Skipping: kubectl argo rollouts undo ..."
-              exit 0
-            fi
-
             kubectl argo rollouts undo "$ROLLOUT_NAME" -n "$NAMESPACE"
             echo "Rolled back ${{ inputs.environment }} to previous revision"

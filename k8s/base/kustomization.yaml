@@ -5,6 +5,9 @@ resources:
   - deployment.yaml
   - service.yaml
 
+configurations:
+  - kustomizeconfig.yaml
+
 commonLabels:
   app.kubernetes.io/name: todo
 
