@@ -92,6 +92,22 @@ jobs:
       - name: Lint
         run: npx eslint '**/*.js'
 
+  swagger-validate:
+    name: Swagger Contract Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Validate OpenAPI spec
+        run: npx @redocly/cli@latest lint swagger.json
+
   generate-shards:
     runs-on: ubuntu-latest
     outputs:
@@ -252,7 +268,7 @@ jobs:
 
   build-and-push:
     name: Build and Push Docker Image
-    needs: [lint, tests-complete, k6]
+    needs: [lint, swagger-validate, tests-complete, k6]
     runs-on: ubuntu-latest
     permissions:
       contents: read
