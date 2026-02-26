@@ -11,6 +11,6 @@ patches:
 
 images:
   - name: ghcr.io/wookiesrpeople2/todo-api-node:intergration
-    newTag: int
+    newTag: intergration
 
 
