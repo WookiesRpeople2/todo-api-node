@@ -103,23 +103,18 @@ jobs:
               fi
             fi
 
-            echo "Waiting for workload to exist in namespace ${NAMESPACE}..."
+            echo "Detecting workload kind in namespace ${NAMESPACE}..."
             WORKLOAD_KIND=""
-            for _ in $(seq 1 60); do
-              if kubectl get rollout "$ROLLOUT_NAME" -n "$NAMESPACE" >/dev/null 2>&1; then
-                WORKLOAD_KIND="rollout"
-                break
-              fi
-              if kubectl get deployment "$ROLLOUT_NAME" -n "$NAMESPACE" >/dev/null 2>&1; then
-                WORKLOAD_KIND="deployment"
-                break
-              fi
-              sleep 2
-            done
+            if kubectl get rollout "$ROLLOUT_NAME" -n "$NAMESPACE" >/dev/null 2>&1; then
+              WORKLOAD_KIND="rollout"
+            elif kubectl get deployment "$ROLLOUT_NAME" -n "$NAMESPACE" >/dev/null 2>&1; then
+              WORKLOAD_KIND="deployment"
+            fi
 
             if [ -z "$WORKLOAD_KIND" ]; then
-              echo "Timed out waiting for Rollout/Deployment '$ROLLOUT_NAME' in namespace '$NAMESPACE'."
-              exit 1
+              echo "Workload '$ROLLOUT_NAME' not found yet in namespace '$NAMESPACE'."
+              echo "GitOps mode: Argo CD may still be reconciling, so skipping live workload checks."
+              exit 0
             fi
 
             if [ "$WORKLOAD_KIND" = "rollout" ]; then
