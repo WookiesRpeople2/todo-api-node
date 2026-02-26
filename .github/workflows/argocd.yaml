@@ -31,7 +31,6 @@ jobs:
           script: |
             set -euo pipefail
 
-            # Defaults (in case GitHub Environment vars aren't configured)
             NAMESPACE="${{ vars.NAMESPACE }}"
             if [ -z "$NAMESPACE" ]; then
               NAMESPACE="${{ inputs.environment }}"
@@ -49,12 +48,12 @@ jobs:
 
             ROLLOUT_NAME="${{ vars.ROLLOUT_NAME }}"
             if [ -z "$ROLLOUT_NAME" ]; then
-              ROLLOUT_NAME="app"
+              ROLLOUT_NAME="todo"
             fi
 
             ROLLOUT_CONTAINER="${{ vars.ROLLOUT_CONTAINER }}"
             if [ -z "$ROLLOUT_CONTAINER" ]; then
-              ROLLOUT_CONTAINER="app"
+              ROLLOUT_CONTAINER="todo"
             fi
 
             IMAGE_TAG="${{ inputs.image_tag }}"
