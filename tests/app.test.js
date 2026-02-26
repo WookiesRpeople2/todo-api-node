@@ -240,6 +240,159 @@ describe('Express App', () => {
     expect(response.body.status).toBe('pending');
   });
 
+  test('Server should start and listen on specified port', async () => {
+    const { startServer } = require('../app');
+    const logger = require('../logger.js');
+    
+    // Spy on logger.info to verify it's called
+    const loggerSpy = jest.spyOn(logger, 'info').mockImplementation(() => {});
+    
+    // Use a test port to avoid conflicts
+    const testPort = 9999;
+    const server = startServer(testPort);
+    
+    // Wait a tick to ensure callback is executed
+    await new Promise((resolve) => setImmediate(resolve));
+    
+    // Verify server is listening
+    expect(server.listening).toBe(true);
+    
+    // Verify logger.info was called with correct data
+    expect(loggerSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ port: testPort, pid: process.pid }),
+      "Server started and listening"
+    );
+    
+    // Clean up
+    loggerSpy.mockRestore();
+    await new Promise((resolve) => {
+      server.close(resolve);
+    });
+  });
+
+  test('startServer should be exported as module export', () => {
+    delete require.cache[require.resolve('../app')];
+    const appModule = require('../app');
+    
+    // Verify startServer is exported
+    expect(appModule.startServer).toBeDefined();
+    expect(typeof appModule.startServer).toBe('function');
+    
+    // Verify it's the same function that starts servers
+    expect(appModule.startServer.length).toBe(0);
+  });
+
+  test('initializeServer should return null when module is not main', () => {
+    const { initializeServer } = require('../app');
+    
+    // When app.js is imported (not run directly), initializeServer returns null
+    const result = initializeServer(false);
+    expect(result).toBeNull();
+  });
+
+  test('initializeServer should return server instance when forced as main', async () => {
+    const logger = require('../logger.js');
+    const loggerSpy = jest.spyOn(logger, 'info').mockImplementation(() => {});
+    
+    const { initializeServer } = require('../app');
+    
+    // Force the main-module path to cover `return startServer()`
+    const server = initializeServer(true);
+    
+    expect(server).toBeDefined();
+    expect(server).not.toBeNull();
+    expect(server.listening).toBe(true);
+    expect(typeof server.close).toBe('function');
+    
+    loggerSpy.mockRestore();
+    await new Promise((resolve) => { server.close(resolve); });
+  });
+
+  test('initializeServer is exported and can be called', () => {
+    const appModule = require('../app');
+    
+    // Verify initializeServer is properly exported
+    expect(appModule.initializeServer).toBeDefined();
+    expect(typeof appModule.initializeServer).toBe('function');
+    
+    // Call it (will return null when imported, not run as main)
+    const result = appModule.initializeServer(false);
+    
+    // In test context, require.main !== module, so returns null
+    expect(result).toBeNull();
+  });
+
+
+  test('app.js should initialize and start server when run as main module', (done) => {
+    const testPort = 9996;
+    const timeout = setTimeout(() => {
+      child.kill();
+      done(new Error('Server subprocess did not respond in time'));
+    }, 15000);
+
+    const child = spawn('node', ['app.js'], {
+      env: { ...process.env, PORT: testPort, NODE_ENV: 'test' },
+      cwd: __dirname.replace(/tests$/, '')
+    });
+
+    let serverReady = false;
+    let checkAttempts = 0;
+    const maxCheckAttempts = 30; // 30 * 500ms = 15 seconds
+
+    // Poll for server readiness
+    const checkInterval = setInterval(() => {
+      checkAttempts++;
+      
+      const req = require('http').get(`http://localhost:${testPort}/health`, (res) => {
+        if (res.statusCode === 200) {
+          serverReady = true;
+          let data = '';
+          res.on('data', chunk => { data += chunk; });
+          res.on('end', () => {
+            try {
+              const healthData = JSON.parse(data);
+              expect(healthData.status).toBe('UP');
+              
+              // Server is ready, clean up
+              clearInterval(checkInterval);
+              clearTimeout(timeout);
+              child.kill();
+              done();
+            } catch (err) {
+              child.kill();
+              done(err);
+            }
+          });
+        }
+      });
+
+      req.on('error', () => {
+        if (checkAttempts >= maxCheckAttempts) {
+          clearInterval(checkInterval);
+          clearTimeout(timeout);
+          child.kill();
+          done(new Error('Server did not respond to health check after multiple attempts'));
+        }
+      });
+
+      req.setTimeout(1000, () => req.destroy());
+    }, 500);
+
+    // Handle subprocess errors
+    child.on('error', (err) => {
+      clearInterval(checkInterval);
+      clearTimeout(timeout);
+      done(err);
+    });
+
+    // Log stderr for debugging
+    child.stderr.on('data', (data) => {
+      if (process.env.DEBUG) {
+        console.log(`[subprocess stderr] ${data}`);
+      }
+    });
+  });
+
   test('GET /feat should be disabled by default', async () => {
     const response = await request(app)
       .get('/feat')

@@ -7,6 +7,8 @@ const path = require("path");
 const swaggerUi = require("swagger-ui-express");
 const swaggerDocument = require("./swagger.json");
 const todoRouter = require("./routes/todo");
+const logger = require("./logger.js");
+
 const { createFeatureFlags } = require("./featureFlags");
 const logger = require("./logger.js");
 
