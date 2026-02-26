@@ -1,0 +1,15 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+        - name: todo
+          env:
+            - name: ENV
+              value: "production"
+
+
