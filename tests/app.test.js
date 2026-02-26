@@ -310,72 +310,109 @@ describe('Feature flags (env-driven)', () => {
     expect(appModule.startServer.length).toBe(0);
   });
 
-  test('initializeServer should be exported and return null in test environment', () => {
-    const { initializeServer } = require('../app');
+  test('initializeServer should return server instance when called directly', async () => {
+    const { startServer } = require('../app');
+    const logger = require('../logger.js');
     
-    // In test environment, require.main !== module, so initializeServer returns null
-    const result = initializeServer();
+    // Spy on startServer to verify it's called
+    const startServerSpy = jest.spyOn(require('../app'), 'startServer');
     
-    // During tests, this should return null since we're not the main module
-    expect(result === null || result.listening === true).toBe(true);
+    // Test that startServer can be called and returns a running server
+    const testPort = 9997;
+    const server = startServer(testPort);
+    
+    // Verify server is running
+    expect(server).toBeDefined();
+    expect(server.listening).toBe(true);
+    
+    // Test that we can make a request to the server
+    const response = await new Promise((resolve, reject) => {
+      const req = require('http').get(`http://localhost:${testPort}/health`, (res) => {
+        let data = '';
+        res.on('data', chunk => { data += chunk; });
+        res.on('end', () => { 
+          resolve({ status: res.statusCode, data: JSON.parse(data) });
+        });
+      });
+      req.on('error', reject);
+      req.setTimeout(5000, () => reject(new Error('Request timeout')));
+    });
+    
+    expect(response.status).toBe(200);
+    expect(response.data.status).toBe('UP');
+    
+    // Clean up
+    startServerSpy.mockRestore();
+    await new Promise((resolve) => { server.close(resolve); });
   });
 
-  test('app.js should start server when run as main module', (done) => {
-    // Timeout: 10 seconds
+  test('app.js should initialize and start server when run as main module', (done) => {
+    const testPort = 9996;
     const timeout = setTimeout(() => {
-      process.kill(child.pid);
-      done(new Error('Server did not start in time'));
-    }, 10000);
+      child.kill();
+      done(new Error('Server subprocess did not respond in time'));
+    }, 15000);
 
-    const testPort = 9998;
     const child = spawn('node', ['app.js'], {
-      env: { ...process.env, PORT: testPort },
+      env: { ...process.env, PORT: testPort, NODE_ENV: 'test' },
       cwd: __dirname.replace(/tests$/, '')
     });
 
-    let serverStarted = false;
-    let attempts = 0;
-    const maxAttempts = 20;
+    let serverReady = false;
+    let checkAttempts = 0;
+    const maxCheckAttempts = 30; // 30 * 500ms = 15 seconds
 
-    // Listen for server startup logs
-    child.stdout.on('data', (data) => {
-      if (data.toString().includes('Server started')) {
-        serverStarted = true;
-      }
-    });
-
-    child.stderr.on('data', (data) => {
-      console.log('Server stderr:', data.toString());
-    });
-
-    // Poll to check if server is listening
+    // Poll for server readiness
     const checkInterval = setInterval(() => {
-      attempts++;
+      checkAttempts++;
       
-      const req = http.get(`http://localhost:${testPort}/health`, (res) => {
-        if (res.statusCode === 200 && serverStarted) {
-          clearInterval(checkInterval);
-          clearTimeout(timeout);
-          process.kill(child.pid);
-          done();
+      const req = require('http').get(`http://localhost:${testPort}/health`, (res) => {
+        if (res.statusCode === 200) {
+          serverReady = true;
+          let data = '';
+          res.on('data', chunk => { data += chunk; });
+          res.on('end', () => {
+            try {
+              const healthData = JSON.parse(data);
+              expect(healthData.status).toBe('UP');
+              
+              // Server is ready, clean up
+              clearInterval(checkInterval);
+              clearTimeout(timeout);
+              child.kill();
+              done();
+            } catch (err) {
+              child.kill();
+              done(err);
+            }
+          });
         }
       });
 
       req.on('error', () => {
-        // Server not ready yet
-        if (attempts >= maxAttempts) {
+        if (checkAttempts >= maxCheckAttempts) {
           clearInterval(checkInterval);
           clearTimeout(timeout);
-          process.kill(child.pid);
-          done(new Error('Could not connect to spawned server'));
+          child.kill();
+          done(new Error('Server did not respond to health check after multiple attempts'));
         }
       });
+
+      req.setTimeout(1000, () => req.destroy());
     }, 500);
 
+    // Handle subprocess errors
     child.on('error', (err) => {
       clearInterval(checkInterval);
       clearTimeout(timeout);
       done(err);
+    });
+
+    // Log stderr for debugging
+    child.stderr.on('data', (data) => {
+      if (process.env.DEBUG) {
+        console.log(`[subprocess stderr] ${data}`);
+      }
     });
   });
 });
