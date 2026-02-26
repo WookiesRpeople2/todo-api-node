@@ -33,6 +33,9 @@ jobs:
 
             NAMESPACE="${{ vars.NAMESPACE }}"
             REGISTRY="${{ vars.REGISTRY }}"
+            if [ -z "${REGISTRY}" ]; then
+              REGISTRY="ghcr.io"
+            fi
             ROLLOUT_NAME="${{ vars.ROLLOUT_NAME }}"
             ROLLOUT_CONTAINER="${{ vars.ROLLOUT_CONTAINER }}"
             if [ -z "${ROLLOUT_CONTAINER}" ]; then
@@ -57,46 +60,114 @@ jobs:
             echo "Using rollout: ${ROLLOUT_NAME} (container: ${ROLLOUT_CONTAINER})"
             echo "Using image: ${FULL_IMAGE}"
 
-            # Prefer applying the repo's kustomize overlay (so you don't have to paste YAML into GitHub vars).
-            # If that fails (e.g., git not installed on server), fall back to vars.TEMPLATE.
-            if (
-              WORKDIR="$(mktemp -d)"
-              trap 'rm -rf "$WORKDIR"' EXIT
-
-              git clone --depth 1 "https://github.com/${{ github.repository }}.git" "$WORKDIR"
-              git -C "$WORKDIR" fetch --depth 1 origin "${{ github.sha }}"
-              git -C "$WORKDIR" checkout --detach "${{ github.sha }}"
-
-              case "${{ inputs.environment }}" in
-                development) OVERLAY="k8s/overlays/development" ;;
-                staging) OVERLAY="k8s/overlays/intergration" ;;
-                production) OVERLAY="k8s/overlays/production" ;;
-                *)
-                  echo "Unknown environment: ${{ inputs.environment }}"
-                  exit 1
-                  ;;
-              esac
-
-              kubectl apply -k "$WORKDIR/$OVERLAY"
-            ); then
-              echo "Applied overlay for ${{ inputs.environment }}"
-            elif [ -n "$TEMPLATE" ]; then
+            # Prefer applying the Argo CD Application from vars.TEMPLATE (GitOps).
+            # If vars.TEMPLATE is empty, fall back to applying the repo's kustomize overlay directly.
+            if [ -n "$TEMPLATE" ]; then
               echo "$TEMPLATE" | kubectl apply -f -
             else
-              echo "Failed to apply overlay and vars.TEMPLATE is empty."
+              if (
+                WORKDIR="$(mktemp -d)"
+                trap 'rm -rf "$WORKDIR"' EXIT
+
+                git clone --depth 1 "https://github.com/${{ github.repository }}.git" "$WORKDIR"
+                git -C "$WORKDIR" fetch --depth 1 origin "${{ github.sha }}"
+                git -C "$WORKDIR" checkout --detach "${{ github.sha }}"
+
+                case "${{ inputs.environment }}" in
+                  development) OVERLAY="k8s/overlays/development" ;;
+                  staging) OVERLAY="k8s/overlays/intergration" ;;
+                  production) OVERLAY="k8s/overlays/production" ;;
+                  *)
+                    echo "Unknown environment: ${{ inputs.environment }}"
+                    exit 1
+                    ;;
+                esac
+
+                kubectl apply -k "$WORKDIR/$OVERLAY"
+              ); then
+                echo "Applied overlay for ${{ inputs.environment }}"
+              else
+                echo "Failed to apply overlay and vars.TEMPLATE is empty."
+                exit 1
+              fi
+            fi
+
+            echo "Waiting for workload to exist in namespace ${NAMESPACE}..."
+            WORKLOAD_KIND=""
+            for _ in $(seq 1 60); do
+              if kubectl get rollout "$ROLLOUT_NAME" -n "$NAMESPACE" >/dev/null 2>&1; then
+                WORKLOAD_KIND="rollout"
+                break
+              fi
+              if kubectl get deployment "$ROLLOUT_NAME" -n "$NAMESPACE" >/dev/null 2>&1; then
+                WORKLOAD_KIND="deployment"
+                break
+              fi
+              sleep 2
+            done
+
+            if [ -z "$WORKLOAD_KIND" ]; then
+              echo "Timed out waiting for Rollout/Deployment '$ROLLOUT_NAME' in namespace '$NAMESPACE'."
               exit 1
             fi
 
-            kubectl argo rollouts set image "$ROLLOUT_NAME" \
-              "${ROLLOUT_CONTAINER}=${FULL_IMAGE}" \
-              -n "$NAMESPACE"
+            if [ "$WORKLOAD_KIND" = "rollout" ]; then
+              # Ensure Argo Rollouts CLI is available on the server.
+              # Preferred: `kubectl-argo-rollouts` (standalone). Alternative: `kubectl argo rollouts` (plugin).
+              ROLLOUTS_CMD=""
+              if command -v kubectl-argo-rollouts >/dev/null 2>&1; then
+                ROLLOUTS_CMD="kubectl-argo-rollouts"
+              elif kubectl argo rollouts version >/dev/null 2>&1; then
+                ROLLOUTS_CMD="kubectl argo rollouts"
+              else
+                ARCH="$(uname -m)"
+                case "$ARCH" in
+                  x86_64|amd64) BIN_ARCH="amd64" ;;
+                  aarch64|arm64) BIN_ARCH="arm64" ;;
+                  *)
+                    echo "Unsupported architecture for auto-install: $ARCH"
+                    exit 1
+                    ;;
+                esac
 
-            if [ "${{ inputs.canary_weight }}" -lt 100 ]; then
-              kubectl argo rollouts set weight "$ROLLOUT_NAME" \
-                --weight "${{ inputs.canary_weight }}" \
+                # Pin a known-good version; override by setting ROLLOUTS_VERSION on the server if desired.
+                ROLLOUTS_VERSION="${ROLLOUTS_VERSION:-v1.7.2}"
+                BIN_URL="https://github.com/argoproj/argo-rollouts/releases/download/${ROLLOUTS_VERSION}/kubectl-argo-rollouts-linux-${BIN_ARCH}"
+
+                INSTALL_DIR="${HOME}/.local/bin"
+                mkdir -p "$INSTALL_DIR"
+                curl -fsSL "$BIN_URL" -o "${INSTALL_DIR}/kubectl-argo-rollouts"
+                chmod +x "${INSTALL_DIR}/kubectl-argo-rollouts"
+                export PATH="${INSTALL_DIR}:$PATH"
+
+                if ! command -v kubectl-argo-rollouts >/dev/null 2>&1; then
+                  echo "Failed to install kubectl-argo-rollouts"
+                  exit 1
+                fi
+                ROLLOUTS_CMD="kubectl-argo-rollouts"
+              fi
+
+              $ROLLOUTS_CMD set image "$ROLLOUT_NAME" \
+                "${ROLLOUT_CONTAINER}=${FULL_IMAGE}" \
                 -n "$NAMESPACE"
+
+              if [ "${{ inputs.canary_weight }}" -lt 100 ]; then
+                $ROLLOUTS_CMD set weight "$ROLLOUT_NAME" \
+                  --weight "${{ inputs.canary_weight }}" \
+                  -n "$NAMESPACE"
+              else
+                $ROLLOUTS_CMD promote "$ROLLOUT_NAME" -n "$NAMESPACE"
+              fi
             else
-              kubectl argo rollouts promote "$ROLLOUT_NAME" -n "$NAMESPACE"
+              kubectl set image "deployment/$ROLLOUT_NAME" \
+                "${ROLLOUT_CONTAINER}=${FULL_IMAGE}" \
+                -n "$NAMESPACE"
+
+              if [ "${{ inputs.canary_weight }}" -lt 100 ]; then
+                echo "canary_weight ignored: this environment is using a Deployment (no canary)."
+              fi
+
+              kubectl rollout status "deployment/$ROLLOUT_NAME" -n "$NAMESPACE"
             fi
 
   rollback:
@@ -118,5 +189,17 @@ jobs:
 
             NAMESPACE="${{ vars.NAMESPACE }}"
             ROLLOUT_NAME="${{ vars.ROLLOUT_NAME }}"
-            kubectl argo rollouts undo "$ROLLOUT_NAME" -n "$NAMESPACE"
-            echo "Rolled back ${{ inputs.environment }} to previous revision"
+            if kubectl get rollout "$ROLLOUT_NAME" -n "$NAMESPACE" >/dev/null 2>&1; then
+              if command -v kubectl-argo-rollouts >/dev/null 2>&1; then
+                kubectl-argo-rollouts undo "$ROLLOUT_NAME" -n "$NAMESPACE"
+              elif kubectl argo rollouts version >/dev/null 2>&1; then
+                kubectl argo rollouts undo "$ROLLOUT_NAME" -n "$NAMESPACE"
+              else
+                echo "Rollback needs Argo Rollouts CLI (kubectl-argo-rollouts)."
+                exit 1
+              fi
+              echo "Rolled back Rollout $ROLLOUT_NAME in ${{ inputs.environment }}"
+            else
+              kubectl rollout undo "deployment/$ROLLOUT_NAME" -n "$NAMESPACE"
+              echo "Rolled back Deployment $ROLLOUT_NAME in ${{ inputs.environment }}"
+            fi

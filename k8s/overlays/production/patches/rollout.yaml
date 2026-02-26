@@ -3,7 +3,7 @@ kind: Rollout
 metadata:
   name: todo
 spec:
-  replicas: 2
+  replicas: 3
   template:
     spec:
       containers:
@@ -13,3 +13,4 @@ spec:
                 name: todo-config
             - secretRef:
                 name: todo-secrets
+

@@ -1,11 +1,21 @@
-apiVersion: argoproj.io/v1alpha1
-kind: Rollout
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: todo
+  labels:
+    app: todo
 spec:
-  replicas: 3
+  replicas: 1
+  selector:
+    matchLabels:
+      app: todo
   template:
+    metadata:
+      labels:
+        app: todo
     spec:
+      imagePullSecrets:
+        - name: ghcr-secret
       containers:
         - name: todo
           image: ghcr.io/wookiesrpeople2/todo-api-node:latest
@@ -22,9 +32,4 @@ spec:
             limits:
               cpu: "100m"
               memory: "512Mi"
-          envFrom:
-            - configMapRef:
-                name: todo-config
-            - secretRef:
-                name: todo-secrets
 

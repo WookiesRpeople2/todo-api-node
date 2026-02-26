@@ -2,17 +2,16 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - ../../base-rollout
+  - ../../base-deployment
 
-namespace: staging
+namespace: development
 
-nameSuffix: -int
+nameSuffix: -dev
 
 patches:
-  - path: patches/rollout.yaml
+  - path: patches/deployment.yaml
 
 images:
   - name: ghcr.io/wookiesrpeople2/todo-api-node:latest
-    newTag: intergration
-
+    newTag: development
 
