@@ -9,6 +9,7 @@ const swaggerDocument = require("./swagger.json");
 const todoRouter = require("./routes/todo");
 const logger = require("./logger.js");
 
+const { createFeatureFlags } = require("./featureFlags");
 const app = express();
 
 /**
@@ -24,6 +25,8 @@ const productionLazyImport = (callback) => {
   }
 };
 
+const featureFlags = createFeatureFlags({ logger: console });
+
 // Parse incoming JSON request bodies
 app.use(express.json());
 
@@ -37,7 +40,17 @@ app.get("/", (_req, res) => {
 });
 
 /**
- * Health endpoint
+ * Feature-gated endpoint example.
+ * Always registered to keep app behavior deterministic; returns 404 when disabled.
+ */
+app.get("/feat", (_req, res) => {
+  if (!featureFlags.isEnabled("new-checkout-flow")) {
+    return res.status(404).json({ detail: "Feature disabled" });
+  }
+  return res.json({ message: "Feature-Flag" });
+});
+
+/* Health endpoint
  * Returns API health status and metadata
  */
 app.get("/health", (_req, res) => {
@@ -48,7 +61,7 @@ app.get("/health", (_req, res) => {
     environment: process.env.NODE_ENV || "development",
     uptime: process.uptime(),
   });
-});
+})
 
 /**
  * Debug endpoint - only available in development/test environments
