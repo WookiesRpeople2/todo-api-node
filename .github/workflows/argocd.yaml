@@ -33,6 +33,7 @@ jobs:
 
             NAMESPACE="${{ vars.NAMESPACE }}"
             REGISTRY="${{ vars.REGISTRY }}"
+            ROLLOUT_NAME = "${{ vars.ROLLOUT_NAME }}"
             IMAGE_NAME="${{ vars.IMAGE_NAME }}"
             if [ -z "$IMAGE_NAME" ]; then
               IMAGE_NAME="${{ github.repository }}"
