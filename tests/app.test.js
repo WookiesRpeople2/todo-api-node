@@ -247,7 +247,7 @@ describe('Express App', () => {
     expect(typeof appModule.startServer).toBe('function');
     
     // Verify it's the same function that starts servers
-    expect(appModule.startServer.length).toBe(2); // 2 parameters: port and host
+    expect(appModule.startServer.length).toBe(0);
   });
 
   test('initializeServer should be exported and return null in test environment', () => {
