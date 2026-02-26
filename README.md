@@ -6,6 +6,7 @@
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18-green)](https://nodejs.org/)
 [![Docker Image](https://img.shields.io/badge/docker-ready-blue)](https://www.docker.com/)
 [![Sentry](https://img.shields.io/badge/monitoring-Sentry-362d59?logo=sentry)](https://sentry.io)
+[![Sentry Status](https://img.shields.io/website?url=https://status.sentry.io)](https://status.sentry.io)
 
 Simple Express API for managing todos with a file-backed SQLite database (sql.js).
 
