@@ -6,8 +6,7 @@ const express = require("express");
 const swaggerUi = require("swagger-ui-express");
 const swaggerDocument = require("./swagger.json");
 const todoRouter = require("./routes/todo");
-const Flagsmith = require('flagsmith-nodejs');
-
+const { default: Flagsmith } = require("flagsmith-nodejs");
 const app = express();
 
 /**
