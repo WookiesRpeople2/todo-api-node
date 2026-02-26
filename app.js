@@ -3,6 +3,7 @@
  * Provides RESTful endpoints for managing todos with SQLite backend
  */
 const express = require("express");
+const path = require("path");
 const swaggerUi = require("swagger-ui-express");
 const swaggerDocument = require("./swagger.json");
 const todoRouter = require("./routes/todo");
@@ -79,8 +80,14 @@ productionLazyImport(() => {
 /**
  * Swagger UI documentation endpoint
  * Serves interactive API documentation and static assets at /docs
+ * Assets are served from node_modules/swagger-ui-dist with proper MIME types
  */
-app.use("/docs", swaggerUi.serveFiles(swaggerDocument), swaggerUi.setup(swaggerDocument));
+const swaggerUiDistPath = path.join(__dirname, "node_modules", "swagger-ui-dist");
+app.use("/docs", express.static(swaggerUiDistPath));
+app.get("/docs", swaggerUi.setup(swaggerDocument, { swaggerUrl: "/swagger.json" }));
+app.get("/swagger.json", (_req, res) => {
+  res.json(swaggerDocument);
+});
 
 // Mount todo routes under /todos path
 app.use("/todos", todoRouter);
