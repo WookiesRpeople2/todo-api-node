@@ -1,0 +1,8 @@
+[
+  {
+    "name": "new-checkout-flow",
+    "development": true,
+    "staging": true,
+    "production": false
+  }
+]

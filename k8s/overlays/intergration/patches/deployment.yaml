@@ -8,7 +8,8 @@ spec:
     spec:
       containers:
         - name: todo
-          env:
-            - name: ENV
-              value: "intergration"
-
+          envFrom:
+            - configMapRef:
+                name: todo-config
+            - secretRef:
+                name: todo-secrets

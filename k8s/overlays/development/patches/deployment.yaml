@@ -8,8 +8,10 @@ spec:
     spec:
       containers:
         - name: todo
-          env:
-            - name: ENV
-              value: "development"
+          envFrom:
+            - configMapRef:
+                name: todo-config
+            - secretRef:
+                name: todo-secrets
 
 
