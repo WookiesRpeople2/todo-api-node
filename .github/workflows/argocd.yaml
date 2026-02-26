@@ -41,6 +41,7 @@ jobs:
             if [ -z "${ROLLOUT_CONTAINER}" ]; then
               ROLLOUT_CONTAINER="todo"
             fi
+            TEMPLATE="${{ vars.TEMPLATE }}"
             RTEMPLATE="${{ vars.RTEMPLATE }}"
             IMAGE_NAME="${{ vars.IMAGE_NAME }}"
             if [ -z "$IMAGE_NAME" ]; then
@@ -60,11 +61,17 @@ jobs:
             echo "Using rollout: ${ROLLOUT_NAME} (container: ${ROLLOUT_CONTAINER})"
             echo "Using image: ${FULL_IMAGE}"
 
-            # Apply the Rollout/Argo CD manifest from vars.RTEMPLATE.
-            # If vars.RTEMPLATE is empty, fall back to applying the repo's kustomize overlay directly.
+            # Apply both manifests (if provided), otherwise fall back to overlay.
+            # - vars.TEMPLATE: typically Argo CD Application
+            # - vars.RTEMPLATE: optionally extra resources (e.g., Rollout/Services) or another Application
+            if [ -n "$TEMPLATE" ]; then
+              echo "$TEMPLATE" | kubectl apply -f -
+            fi
             if [ -n "$RTEMPLATE" ]; then
               echo "$RTEMPLATE" | kubectl apply -f -
-            else
+            fi
+
+            if [ -z "$TEMPLATE" ] && [ -z "$RTEMPLATE" ]; then
               if (
                 WORKDIR="$(mktemp -d)"
                 trap 'rm -rf "$WORKDIR"' EXIT
@@ -87,7 +94,7 @@ jobs:
               ); then
                 echo "Applied overlay for ${{ inputs.environment }}"
               else
-                echo "Failed to apply overlay and vars.RTEMPLATE is empty."
+                echo "Failed to apply overlay and both vars.TEMPLATE and vars.RTEMPLATE are empty."
                 exit 1
               fi
             fi
