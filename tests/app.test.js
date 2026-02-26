@@ -197,15 +197,29 @@ describe('Express App', () => {
 
   test('Server should start and listen on specified port', async () => {
     const { startServer } = require('../app');
+    const logger = require('../logger.js');
+    
+    // Spy on logger.info to verify it's called
+    const loggerSpy = jest.spyOn(logger, 'info').mockImplementation(() => {});
     
     // Use a test port to avoid conflicts
     const testPort = 9999;
     const server = startServer(testPort);
     
+    // Wait a tick to ensure callback is executed
+    await new Promise((resolve) => setImmediate(resolve));
+    
     // Verify server is listening
     expect(server.listening).toBe(true);
     
-    // Clean up: close the server
+    // Verify logger.info was called with correct data
+    expect(loggerSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ port: testPort, pid: process.pid }),
+      "Server started and listening"
+    );
+    
+    // Clean up
+    loggerSpy.mockRestore();
     await new Promise((resolve) => {
       server.close(resolve);
     });
