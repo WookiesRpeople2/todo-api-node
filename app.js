@@ -6,6 +6,7 @@ const express = require("express");
 const swaggerUi = require("swagger-ui-express");
 const swaggerDocument = require("./swagger.json");
 const todoRouter = require("./routes/todo");
+const Flagsmith = require('flagsmith-nodejs');
 
 const app = express();
 
@@ -22,19 +23,19 @@ const productionLazyImport = (callback) => {
   }
 };
 
-const Flagsmith = require('flagsmith-nodejs');
-
-const flagsmith = new Flagsmith({
-  environmentKey: process.env.FLAGSMITH_KEY,
-});
-
-const flags = await flagsmith.getEnvironmentFlags();
-
-if (flags.isFeatureEnabled('new-checkout-flow')) {
-  app.get("/", (_req, res) => {
-    res.json({ message: "Welcome to the Enhanced Express Todo App!" });
+(async () => {
+  const flagsmith = new Flagsmith({
+    environmentKey: process.env.FLAGSMITH_KEY,
   });
-}
+
+  const flags = flagsmith.getEnvironmentFlags();
+
+  if (flags.isFeatureEnabled('new-checkout-flow')) {
+    app.get("/", (_req, res) => {
+      res.json({ message: "Welcome to the Enhanced Express Todo App!" });
+    });
+  }
+})();
 
 // Parse incoming JSON request bodies
 app.use(express.json());
