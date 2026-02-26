@@ -2,7 +2,6 @@ const request = require('supertest');
 const app = require('../app');
 const { getDb, saveDb } = require('../database/database');
 const { spawn } = require('child_process');
-const http = require('http');
 
 describe('Express App', () => {
   beforeEach(async () => {
@@ -252,7 +251,7 @@ describe('Express App', () => {
 
   test('initializeServer should return server instance when called directly', async () => {
     const { startServer } = require('../app');
-    const logger = require('../logger.js');
+    require('../logger.js');
     
     // Spy on startServer to verify it's called
     const startServerSpy = jest.spyOn(require('../app'), 'startServer');
