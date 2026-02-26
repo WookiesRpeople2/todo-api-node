@@ -33,7 +33,11 @@ jobs:
 
             NAMESPACE="${{ vars.NAMESPACE }}"
             REGISTRY="${{ vars.REGISTRY }}"
-            ROLLOUT_NAME = "${{ vars.ROLLOUT_NAME }}"
+            ROLLOUT_NAME="${{ vars.ROLLOUT_NAME }}"
+            ROLLOUT_CONTAINER="${{ vars.ROLLOUT_CONTAINER }}"
+            if [ -z "${ROLLOUT_CONTAINER}" ]; then
+              ROLLOUT_CONTAINER="app"
+            fi
             IMAGE_NAME="${{ vars.IMAGE_NAME }}"
             if [ -z "$IMAGE_NAME" ]; then
               IMAGE_NAME="${{ github.repository }}"
@@ -54,9 +58,13 @@ jobs:
 
             echo "${{ vars.TEMPLATE }}" | kubectl apply -f -
 
+            kubectl argo rollouts set image "$ROLLOUT_NAME" \
+              "${ROLLOUT_CONTAINER}=${FULL_IMAGE}" \
+              -n "$NAMESPACE"
+
             if [ "${{ inputs.canary_weight }}" -lt 100 ]; then
-              kubectl argo rollouts set image "$ROLLOUT_NAME" \
-                "${ROLLOUT_CONTAINER}=${FULL_IMAGE}" \
+              kubectl argo rollouts set weight "$ROLLOUT_NAME" \
+                --weight "${{ inputs.canary_weight }}" \
                 -n "$NAMESPACE"
             else
               kubectl argo rollouts promote "$ROLLOUT_NAME" -n "$NAMESPACE"
