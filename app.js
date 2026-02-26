@@ -72,16 +72,29 @@ app.use("/docs", swaggerUi.serveFiles(swaggerDocument), swaggerUi.setup(swaggerD
 // Mount todo routes under /todos path
 app.use("/todos", todoRouter);
 
-// Export app for testing purposes
+/**
+ * Start the Express server
+ * Listens on the specified or configured PORT
+ * Logs startup information for observability
+ * @param {number} port - Port number to listen on (default: 3000)
+ * @param {string} host - Host to bind to (default: undefined/localhost)
+ * @returns {http.Server} The server instance
+ */
+const startServer = (port = process.env.PORT || 3000, host = undefined) => {
+  const server = app.listen(port, host, () => {
+    logger.info({ port, pid: process.pid }, "Server started and listening");
+  });
+  return server;
+};
+
+// Export app and startServer for testing and external use
 module.exports = app;
+module.exports.startServer = startServer;
 
 /**
  * Start server only when run directly (not when imported for testing)
  * Supports custom PORT via environment variable, defaults to 3000
  */
 if (require.main === module) {
-  const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => {
-    logger.info({ port: PORT, pid: process.pid }, "Server started and listening");
-  });
+  startServer();
 }
