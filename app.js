@@ -24,7 +24,7 @@ const productionLazyImport = (callback) => {
 
 flagsmith.init({
   environmentID: process.env.FLAGSMITH_KEY,
-  onChange: (oldFlags, params) => {
+  onChange: (_oldFlags, _params) => {
    if (flagsmith.hasFeature('new-checkout-flow')) {
     app.get("/feat", (_req, res) => {
       res.json({ message: "Feature-Flag" });
