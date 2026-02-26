@@ -6,7 +6,7 @@ resources:
 
 namespace: development
 
-nameSuffix: -dev
+nameSuffix: -dev-deployment
 
 patches:
   - path: patches/deployment.yaml

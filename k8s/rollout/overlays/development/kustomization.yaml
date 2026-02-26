@@ -3,10 +3,10 @@ kind: Kustomization
 
 resources:
   - ../../base
-  
+
 namespace: development
 
-nameSuffix: -dev
+nameSuffix: -dev-rollout
 
 patches:
   - path: patches/rollout.yaml
