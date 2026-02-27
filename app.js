@@ -94,6 +94,7 @@ app.get("/", (_req, res) => {
  */
 app.get("/feat", (_req, res) => {
   if (!featureFlags.isEnabled("new-checkout-flow")) {
+    logger.info({ path: "/feat", message: "Feature disabled", info: featureFlags.isEnabled("new-checkout-flow") }, "Feature disabled");
     return res.status(404).json({ detail: "Feature disabled" });
   }
   return res.json({ message: "Feature-Flag" });
@@ -120,8 +121,7 @@ app.get("/health", (_req, res) => {
 productionLazyImport(() => {
   app.get("/debug", (_req, res) => {
     res.json({
-      secret: process.env.SECRET_KEY,
-      api_key: process.env.API_KEY,
+      message: "Debug endpoint",
     });
   });
 });

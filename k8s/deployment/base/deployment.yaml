@@ -19,7 +19,7 @@ spec:
       containers:
         - name: todo
           image: ghcr.io/wookiesrpeople2/todo-api-node:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 80
           env:
