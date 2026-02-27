@@ -4,6 +4,8 @@ kind: Kustomization
 resources:
   - ../../base
 
+namespace: production
+
 nameSuffix: -prod
 
 patches:
@@ -12,5 +14,4 @@ patches:
 images:
   - name: ghcr.io/wookiesrpeople2/todo-api-node:latest
     newTag: main
-
 

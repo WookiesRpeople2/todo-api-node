@@ -4,13 +4,15 @@ kind: Kustomization
 resources:
   - ../../base
 
+namespace: intergration
+
 nameSuffix: -int
 
 patches:
-  - path: patches/deployment.yaml
+  - path: patches/rollout.yaml
 
 images:
-  - name: ghcr.io/wookiesrpeople2/todo-api-node:intergration
+  - name: ghcr.io/wookiesrpeople2/todo-api-node:latest
     newTag: intergration
 
 

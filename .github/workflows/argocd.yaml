@@ -6,6 +6,18 @@ on:
       environment:
         required: true
         type: string
+      use_rtemplate:
+        required: false
+        type: boolean
+        default: false
+      canary_weight:
+        required: false
+        type: number
+        default: 100
+      image_tag:
+        required: false
+        type: string
+        default: latest
 
 jobs:
   deploy:
@@ -13,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     steps:
-      - name: Apply ArgoCD template
+      - name: Apply kustomize overlay (or template)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -21,4 +33,136 @@ jobs:
           password: ${{ secrets.SERVER_PASSWORD }}
           port: ${{ secrets.SERVER_PORT }}
           script: |
-            echo "${{ vars.TEMPLATE }}" | kubectl apply -f -
+            set -euo pipefail
+
+            NAMESPACE="${{ vars.NAMESPACE }}"
+            REGISTRY="${{ vars.REGISTRY }}"
+            if [ -z "${REGISTRY}" ]; then
+              REGISTRY="ghcr.io"
+            fi
+            ROLLOUT_NAME="${{ vars.ROLLOUT_NAME }}"
+            ROLLOUT_CONTAINER="${{ vars.ROLLOUT_CONTAINER }}"
+            if [ -z "${ROLLOUT_CONTAINER}" ]; then
+              ROLLOUT_CONTAINER="todo"
+            fi
+            TEMPLATE="${{ vars.TEMPLATE }}"
+            RTEMPLATE="${{ vars.RTEMPLATE }}"
+            IMAGE_NAME="${{ vars.IMAGE_NAME }}"
+            if [ -z "$IMAGE_NAME" ]; then
+              IMAGE_NAME="${{ github.repository }}"
+            fi
+
+            IMAGE_TAG="${{ inputs.image_tag }}"
+            IMAGE_REPO="${REGISTRY}/${IMAGE_NAME}"
+            if [ "${IMAGE_TAG#sha256:}" != "$IMAGE_TAG" ]; then
+              # Digest form (docker/build-push-action outputs sha256:... digests)
+              FULL_IMAGE="${IMAGE_REPO}@${IMAGE_TAG}"
+            else
+              FULL_IMAGE="${IMAGE_REPO}:${IMAGE_TAG}"
+            fi
+
+            echo "Using namespace: ${NAMESPACE}"
+            echo "Using rollout: ${ROLLOUT_NAME} (container: ${ROLLOUT_CONTAINER})"
+            echo "Using image: ${FULL_IMAGE}"
+
+            # Apply selected manifest(s), otherwise fall back to overlay.
+            # - vars.TEMPLATE: normal Argo CD Application
+            # - vars.RTEMPLATE: separate canary Application (used only when requested)
+            if [ -n "$TEMPLATE" ]; then
+              echo "$TEMPLATE" | kubectl apply -f -
+            fi
+            if [ "${{ inputs.use_rtemplate }}" = "true" ] && [ -n "$RTEMPLATE" ]; then
+              echo "$RTEMPLATE" | kubectl apply -f -
+            fi
+
+            if [ -z "$TEMPLATE" ] && { [ "${{ inputs.use_rtemplate }}" != "true" ] || [ -z "$RTEMPLATE" ]; }; then
+              if (
+                WORKDIR="$(mktemp -d)"
+                trap 'rm -rf "$WORKDIR"' EXIT
+
+                git clone --depth 1 "https://github.com/${{ github.repository }}.git" "$WORKDIR"
+                git -C "$WORKDIR" fetch --depth 1 origin "${{ github.sha }}"
+                git -C "$WORKDIR" checkout --detach "${{ github.sha }}"
+
+                case "${{ inputs.environment }}" in
+                  development) OVERLAY="k8s/rollout/overlays/development" ;;
+                  staging) OVERLAY="k8s/rollout/overlays/intergration" ;;
+                  production) OVERLAY="k8s/rollout/overlays/production" ;;
+                  *)
+                    echo "Unknown environment: ${{ inputs.environment }}"
+                    exit 1
+                    ;;
+                esac
+
+                kubectl apply -k "$WORKDIR/$OVERLAY"
+              ); then
+                echo "Applied overlay for ${{ inputs.environment }}"
+              else
+                echo "Failed to apply overlay and both vars.TEMPLATE and vars.RTEMPLATE are empty."
+                exit 1
+              fi
+            fi
+
+            echo "Detecting workload kind in namespace ${NAMESPACE}..."
+            WORKLOAD_KIND=""
+            if kubectl get rollout "$ROLLOUT_NAME" -n "$NAMESPACE" >/dev/null 2>&1; then
+              WORKLOAD_KIND="rollout"
+            elif kubectl get deployment "$ROLLOUT_NAME" -n "$NAMESPACE" >/dev/null 2>&1; then
+              WORKLOAD_KIND="deployment"
+            fi
+
+            if [ -z "$WORKLOAD_KIND" ]; then
+              echo "Workload '$ROLLOUT_NAME' not found yet in namespace '$NAMESPACE'."
+              echo "GitOps mode: Argo CD may still be reconciling, so skipping live workload checks."
+              exit 0
+            fi
+
+            if [ "$WORKLOAD_KIND" = "rollout" ]; then
+              echo "GitOps mode enabled: skipping live image mutation for Rollout '${ROLLOUT_NAME}'."
+              echo "Argo CD should reconcile image/tag changes from Git."
+              if [ "${{ inputs.canary_weight }}" -lt 100 ]; then
+                echo "canary_weight ignored in GitOps mode. Manage canary steps via Rollout manifest in Git."
+              fi
+              kubectl get rollout "$ROLLOUT_NAME" -n "$NAMESPACE" -o wide
+            else
+              echo "GitOps mode enabled: skipping live image mutation for Deployment '${ROLLOUT_NAME}'."
+              echo "Argo CD should reconcile image/tag changes from Git."
+              if [ "${{ inputs.canary_weight }}" -lt 100 ]; then
+                echo "canary_weight ignored: this environment is using a Deployment (no canary)."
+              fi
+              kubectl rollout status "deployment/$ROLLOUT_NAME" -n "$NAMESPACE"
+            fi
+
+  rollback:
+    name: Rollback ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: failure()
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Rollback to previous revision
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          port: ${{ secrets.SERVER_PORT }}
+          script: |
+            set -euo pipefail
+
+            NAMESPACE="${{ vars.NAMESPACE }}"
+            ROLLOUT_NAME="${{ vars.ROLLOUT_NAME }}"
+            if kubectl get rollout "$ROLLOUT_NAME" -n "$NAMESPACE" >/dev/null 2>&1; then
+              if command -v kubectl-argo-rollouts >/dev/null 2>&1; then
+                kubectl-argo-rollouts undo "$ROLLOUT_NAME" -n "$NAMESPACE"
+              elif kubectl argo rollouts version >/dev/null 2>&1; then
+                kubectl argo rollouts undo "$ROLLOUT_NAME" -n "$NAMESPACE"
+              else
+                echo "Rollback needs Argo Rollouts CLI (kubectl-argo-rollouts)."
+                exit 1
+              fi
+              echo "Rolled back Rollout $ROLLOUT_NAME in ${{ inputs.environment }}"
+            else
+              kubectl rollout undo "deployment/$ROLLOUT_NAME" -n "$NAMESPACE"
+              echo "Rolled back Deployment $ROLLOUT_NAME in ${{ inputs.environment }}"
+            fi

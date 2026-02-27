@@ -280,3 +280,85 @@ describe('GET /search/all', () => {
     expect(response.body.length).toBe(0);
   });
 });
+
+describe('asyncHandler error handling', () => {
+  const ORIGINAL_ENV = process.env;
+
+  const mockSentry = () => ({
+    init: jest.fn(),
+    captureException: jest.fn(),
+    setTag: jest.fn(),
+    setContext: jest.fn(),
+    Handlers: {
+      requestHandler: () => (req, _res, next) => next(),
+      errorHandler: () => (err, _req, _res, next) => next(err),
+    },
+    Integrations: {
+      Http: function Http() {},
+      Express: function Express() {},
+    },
+  });
+
+  afterEach(() => {
+    process.env = ORIGINAL_ENV;
+    jest.resetModules();
+    jest.clearAllMocks();
+  });
+
+  test('asyncHandler logs error and returns 500 when route handler throws', async () => {
+    jest.resetModules();
+
+    const logger = require('../logger.js');
+    const errorSpy = jest.spyOn(logger, 'error').mockImplementation(() => {});
+
+    // Mock getDb to throw an error - this tests the real asyncHandler from routes/todo.js
+    const dbModule = require('../database/database');
+    jest.spyOn(dbModule, 'getDb').mockRejectedValueOnce(new Error('Database connection failed'));
+
+    const freshApp = require('../app');
+
+    const response = await request(freshApp)
+      .get('/todos')
+      .expect(500);
+
+    expect(response.body.detail).toBe('Internal server error');
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ error: 'Database connection failed' }),
+      'Route handler error'
+    );
+
+    errorSpy.mockRestore();
+  });
+
+  test('asyncHandler captures exception with Sentry when SENTRY_DSN is set', async () => {
+    process.env = {
+      ...ORIGINAL_ENV,
+      SENTRY_DSN: 'https://example@o0.ingest.sentry.io/1',
+      NODE_ENV: 'test',
+    };
+
+    jest.resetModules();
+    jest.doMock('@sentry/node', () => mockSentry());
+
+    const logger = require('../logger.js');
+    jest.spyOn(logger, 'error').mockImplementation(() => {});
+
+    const Sentry = require('@sentry/node');
+
+    // Mock getDb to throw an error - this tests the real asyncHandler with SENTRY_DSN set
+    const dbModule = require('../database/database');
+    jest.spyOn(dbModule, 'getDb').mockRejectedValueOnce(new Error('Sentry test error'));
+
+    const freshApp = require('../app');
+
+    const response = await request(freshApp)
+      .post('/todos')
+      .send({ title: 'Test' })
+      .expect(500);
+
+    expect(response.body.detail).toBe('Internal server error');
+    expect(Sentry.captureException).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'Sentry test error' })
+    );
+  });
+});
