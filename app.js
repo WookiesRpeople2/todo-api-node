@@ -15,7 +15,6 @@ const { createFeatureFlags } = require("./featureFlags");
 /**
  * Initialize Sentry for error tracking and monitoring
  * Only initializes if SENTRY_DSN environment variable is set
- * Safe to leave uninitialized for local development
  */
 if (process.env.SENTRY_DSN) {
   Sentry.init({
