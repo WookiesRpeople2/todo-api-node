@@ -5,7 +5,7 @@ COPY package*.json ./
 RUN npm ci
 COPY database/ ./database/
 COPY routes/ ./routes/
-COPY app.js build.js featureFlags.js swagger.json ./
+COPY app.js build.js featureFlags.js swagger.json logger.js ./
 RUN npm run build
 
 # Runtime stage
