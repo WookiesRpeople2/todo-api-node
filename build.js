@@ -26,17 +26,6 @@ esbuild.build({
   bundle: true,
   platform: "node",
   outfile: "dist/app.js",
-  external: [
-    "pino",
-    "pino-pretty",
-    "swagger-ui-express",
-    "express",
-    "sql.js",
-    "./logger.js",
-    "../logger.js",
-    "./database/database.js",
-    "../database/database.js"
-  ],
   define: {
     "process.env.NODE_ENV": '"production"'
   }
