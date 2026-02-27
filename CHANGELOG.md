@@ -1,5 +1,58 @@
 # Changelog
 
+## [1.7.0](https://github.com/WookiesRpeople2/todo-api-node/compare/v1.6.0...v1.7.0) (2026-02-27)
+
+
+### Features
+
+* add centralized logging with Pino and integrate into API endpoints ([5dbd05e](https://github.com/WookiesRpeople2/todo-api-node/commit/5dbd05ed345dc4e0f20cdbc8ba9b17c1b34eb5b9))
+* add centralized logging with Pino and integrate into API endpoints ([a8464db](https://github.com/WookiesRpeople2/todo-api-node/commit/a8464db7102ff329684c8f548f98130b8935c5ab))
+* add centralized logging with Pino and integrate into API endpoints ([afe4d56](https://github.com/WookiesRpeople2/todo-api-node/commit/afe4d56fdc5413f6efc87b778e90007ecfeaec0d))
+* add logger and database paths to external dependencies in build configuration ([b05278e](https://github.com/WookiesRpeople2/todo-api-node/commit/b05278e292e7f66f50ecafd3fa32cfa62b8c296a))
+* add logger and database paths to external dependencies in build configuration ([8db4288](https://github.com/WookiesRpeople2/todo-api-node/commit/8db428843180dec23aebed4a5b00ee0fa41f936a))
+* add server initialization function and corresponding tests ([f075845](https://github.com/WookiesRpeople2/todo-api-node/commit/f07584576b55404c2e32cd75d2d1ff5a842d9e77))
+* add server initialization function and corresponding tests ([d1ced78](https://github.com/WookiesRpeople2/todo-api-node/commit/d1ced78f0ce807110ea6030f606f393f7ac8829b))
+* add test for disabled feature flag by default ([4171762](https://github.com/WookiesRpeople2/todo-api-node/commit/4171762e4387db466b5bb083aa82ac8dd7cf810d))
+* add test for disabled feature flag by default ([8843c6f](https://github.com/WookiesRpeople2/todo-api-node/commit/8843c6f53625299e84d1c045df5cf724fc9ce263))
+* added canary deployment ([18a49b8](https://github.com/WookiesRpeople2/todo-api-node/commit/18a49b80726515435a121664ff895313f34ac11d))
+* enhance initializeServer and app.js tests for server readiness and logging ([1647e40](https://github.com/WookiesRpeople2/todo-api-node/commit/1647e408c0748f30984906d4c9afd34cfea9d57e))
+* enhance initializeServer and app.js tests for server readiness and logging ([99913f0](https://github.com/WookiesRpeople2/todo-api-node/commit/99913f05b820b77c617dcab8733a5927cabc9d3c))
+* enhance initializeServer to accept main-module override for testing ([1447dc6](https://github.com/WookiesRpeople2/todo-api-node/commit/1447dc6f900eda91d5014e4481015c4a7e3e2792))
+* enhance initializeServer to accept main-module override for testing ([5715b68](https://github.com/WookiesRpeople2/todo-api-node/commit/5715b68f0c3708d83c57ca99dc685fc7f260fe63))
+* enhance Swagger UI integration and add logger verification in tests ([1776003](https://github.com/WookiesRpeople2/todo-api-node/commit/1776003f515d1ebeca5094f4fcf0ea9d186665ca))
+* enhance Swagger UI integration and add logger verification in tests ([e0afd8d](https://github.com/WookiesRpeople2/todo-api-node/commit/e0afd8d2cdcd4afeb985c624c4990f67a11b3413))
+* implement server startup function and add corresponding tests ([0b9b372](https://github.com/WookiesRpeople2/todo-api-node/commit/0b9b3728630bf0e92b7ba48d2fd0b8dcb996705a))
+* implement server startup function and add corresponding tests ([5027c73](https://github.com/WookiesRpeople2/todo-api-node/commit/5027c73026cee30b70daa1231a25c53bdef4d9ef))
+* remove unused http import and adjust logger usage in app tests ([2426c71](https://github.com/WookiesRpeople2/todo-api-node/commit/2426c716bc169e177d8f74478c63c68a3098f1eb))
+* remove unused http import and adjust logger usage in app tests ([9122283](https://github.com/WookiesRpeople2/todo-api-node/commit/9122283bf7348dfe38f70b8ae74cc02ae5f29bc2))
+* **tests:** add Sentry integration tests for error handling and asyncHandler ([5eaf02e](https://github.com/WookiesRpeople2/todo-api-node/commit/5eaf02ea4b713b373535b595ef7a5d36b2091fc0))
+* **tests:** add Sentry integration tests for error handling and asyncHandler ([2a204ca](https://github.com/WookiesRpeople2/todo-api-node/commit/2a204ca4300a7365e3f7d8c5f41f05f5aa00e809))
+* **todos:** integrate Sentry for error tracking and improve error handling in routes ([08a5841](https://github.com/WookiesRpeople2/todo-api-node/commit/08a5841a4dee7a6a2816f2e171eed91a88afc573))
+* **todos:** integrate Sentry for error tracking and improve error handling in routes ([10fd766](https://github.com/WookiesRpeople2/todo-api-node/commit/10fd766ffdde24c8782cd176c116535950de16a0))
+* **todos:** integrate Sentry for error tracking and improve error handling in routes ([3270758](https://github.com/WookiesRpeople2/todo-api-node/commit/32707586f125eeda211bfa0126446182997feef1))
+* **todos:** integrate Sentry for error tracking and improve error handling in routes ([0f8d6eb](https://github.com/WookiesRpeople2/todo-api-node/commit/0f8d6eb9d43ec61c5338241a30fb56d5327628da))
+* **todos:** integrate Sentry for error tracking and improve error handling in routes ([b991499](https://github.com/WookiesRpeople2/todo-api-node/commit/b991499cf65e72aae5b1dc13a1f1531f2dbcad1a))
+* **todos:** integrate Sentry for error tracking and improve error handling in routes ([7a0a8e5](https://github.com/WookiesRpeople2/todo-api-node/commit/7a0a8e5ab31173eb308bdbc8c081e5be08f25121))
+* **todos:** integrate Sentry for error tracking and improve error handling in routes ([c4f2a1c](https://github.com/WookiesRpeople2/todo-api-node/commit/c4f2a1c030f766151dbe0cb43e7a0d9ce1a013c4))
+* **todos:** integrate Sentry for error tracking and improve error handling in routes ([8adad87](https://github.com/WookiesRpeople2/todo-api-node/commit/8adad87d44732b8b26e075eb43b002ec721d912b))
+* **todos:** integrate Sentry for error tracking and improve error handling in routes ([ebad4b7](https://github.com/WookiesRpeople2/todo-api-node/commit/ebad4b723537b9190148af0b69be81ec545ed071))
+* **todos:** integrate Sentry for error tracking and improve error handling in routes ([0b004ec](https://github.com/WookiesRpeople2/todo-api-node/commit/0b004ec37b39d642eb4f18b8c26d60aedf2bd514))
+* update initializeServer tests to verify behavior when module is main and exported ([b01e5c2](https://github.com/WookiesRpeople2/todo-api-node/commit/b01e5c2503a82b2c356f3827656374ca0d0ec451))
+* update initializeServer tests to verify behavior when module is main and exported ([b757477](https://github.com/WookiesRpeople2/todo-api-node/commit/b7574774a1a0125a79ccf6755e3f3d486c6a3cbb))
+* update startServer function signature to accept no parameters ([3a9a317](https://github.com/WookiesRpeople2/todo-api-node/commit/3a9a317490530c10912bd3fbda471dfe6bd87848))
+* update startServer function signature to accept no parameters ([8d6b890](https://github.com/WookiesRpeople2/todo-api-node/commit/8d6b8909396072ed8855a48b7d0f844ad14f8644))
+
+
+### Bug Fixes
+
+* correct expected status code in asyncHandler error handling test ([f52cc87](https://github.com/WookiesRpeople2/todo-api-node/commit/f52cc87f667d4393395333ef49e4481e76ccd2e0))
+* correct logger import paths in app and todo routes ([020c91d](https://github.com/WookiesRpeople2/todo-api-node/commit/020c91dd01044e898ee99b55778556e1eeae0083))
+* correct logger import paths in app and todo routes ([c829021](https://github.com/WookiesRpeople2/todo-api-node/commit/c8290217494d59681a3fe5022f4cf8d16c915057))
+* correct syntax error in feature flags test suite ([26c303d](https://github.com/WookiesRpeople2/todo-api-node/commit/26c303dd874ae431fdf426dd13055d727d605cda))
+* ensure asyncHandler returns a promise for proper error handling ([9334826](https://github.com/WookiesRpeople2/todo-api-node/commit/933482657cc92422b2f707d6fa79492816775338))
+* feature-flags ([808a374](https://github.com/WookiesRpeople2/todo-api-node/commit/808a37429eaf5efe6258f566934a4da53f341e99))
+* remove duplicate logger import in app.js ([6418294](https://github.com/WookiesRpeople2/todo-api-node/commit/6418294ddf64e185fed7a27f44b3657fd1265925))
+
 ## [1.6.0](https://github.com/WookiesRpeople2/todo-api-node/compare/v1.5.0...v1.6.0) (2026-02-25)
 
 
