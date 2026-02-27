@@ -320,21 +320,21 @@ jobs:
       image_tag: ${{ needs.build-and-push.outputs.image-digest }}
     secrets: inherit
 
-  deploy-production-canary:
-    name: Deploy to Production (canary 20%)
-    needs: build-and-push
-    if: github.ref == 'refs/heads/main'
-    uses: ./.github/workflows/argocd.yaml
-    with:
-      environment: production
-      use_rtemplate: true
-      canary_weight: 20
-      image_tag: ${{ needs.build-and-push.outputs.image-digest }}
-    secrets: inherit
+  # deploy-production-canary:
+  #   name: Deploy to Production (canary 20%)
+  #   needs: build-and-push
+  #   if: github.ref == 'refs/heads/main'
+  #   uses: ./.github/workflows/argocd.yaml
+  #   with:
+  #     environment: production
+  #     use_rtemplate: true
+  #     canary_weight: 20
+  #     image_tag: ${{ needs.build-and-push.outputs.image-digest }}
+  #   secrets: inherit
 
   deploy-production:
     name: Deploy to Production (Full)
-    needs: deploy-production-canary
+    # needs: deploy-production-canary
     if: github.ref == 'refs/heads/main'
     uses: ./.github/workflows/argocd.yaml
     with:
